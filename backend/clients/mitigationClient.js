@@ -35,8 +35,7 @@ const MITIGATION_BASE_URL =
 
 const MITIGATION_TIMEOUT_MS =
   (config.mitigation && config.mitigation.timeoutMs) ||
-  Number(process.env.MITIGATION_TIMEOUT_MS || 8000);
-
+  Number(process.env.MITIGATION_TIMEOUT_MS) || 8000;
 const MITIGATION_API_KEY =
   (config.mitigation && config.mitigation.apiKey) ||
   process.env.MITIGATION_API_KEY ||
@@ -66,7 +65,7 @@ function wrapAxiosError(err) {
       cause: err,
     });
   }
-  if (err.code === 'ECONNABORTED') {
+   if (err.code === 'ECONNABORTED' || err.code === 'ETIMEDOUT' || err.code === 'ERR_CANCELED') {
     return new MitigationEngineError('Mitigation engine request timed out', {
       code: 'MITIGATION_TIMEOUT',
       cause: err,
@@ -161,7 +160,7 @@ function createMitigationClient() {
    * Returns a single AlertRecord or throws 404.
    */
   async function getAlert(alertId) {
-    return get(`/alerts/${alertId}`);
+   return get(`/alerts/${encodeURIComponent(alertId)}`);
   }
 
   /**

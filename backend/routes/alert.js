@@ -25,12 +25,11 @@ function mapAlert(a) {
 
   return {
     alert_id:     String(a.id),
-    src_ip:       a.src_ip        || null,
-    dst_ip:       a.dst_ip        || null,
-    src_port:     a.src_port      || null,
-    dst_port:     a.dst_port      || null,
-    protocol:     a.protocol      || null,
-    attack_type:  a.label         || a.verdict || 'Unknown',
+    src_ip:       a.src_ip        ?? null,
+    dst_ip:       a.dst_ip        ?? null,
+    src_port:     a.src_port      ?? null,
+    dst_port:     a.dst_port      ?? null,
+    protocol:     a.protocol      ?? null,    attack_type:  a.label         || a.verdict || 'Unknown',
     verdict:      a.verdict,
     confidence:   a.confidence,
     anomaly_score:a.anomaly_score,
@@ -69,13 +68,14 @@ router.get('/alerts', async (req, res, next) => {
 
     
     if (severity)     alerts = alerts.filter(a => a.severity === severity);
+    // Track if we're applying client-side filters
+    const hasClientFilter = severity || statusFilter;
+    if (severity)     alerts = alerts.filter(a => a.severity === severity);
     if (statusFilter) alerts = alerts.filter(a => a.status   === statusFilter);
 
     return res.json({
-      total:   data.total  ?? alerts.length,
-      count:   alerts.length,
-      alerts,
-      _source: 'live',
+      total:   hasClientFilter ? alerts.length : (data.total ?? alerts.length),
+      count:   alerts.length,      _source: 'live',
     });
   } catch (err) {
     if (err instanceof MitigationEngineError) {
@@ -104,8 +104,7 @@ router.get('/alerts/:id', async (req, res, next) => {
         return res.status(404).json({ detail: `Alert ${id} not found` });
       }
       // Engine down — try fake store
-      const fake = dashboardStore.fakeAlerts.find(a => a.alert_id === id);
-      if (fake) {
+      const fake = dashboardStore.fakeAlerts.find(a => String(a.alert_id) === id);      if (fake) {
         res.set('X-Data-Source', 'demo');
         return res.json({ ...mapFakeAlert(fake) });
       }

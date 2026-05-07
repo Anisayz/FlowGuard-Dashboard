@@ -247,9 +247,8 @@ const InfrastructureDetails: React.FC = () => {
               <tbody>
                 {row('Statut',          badge(uiHealth(health.mitigation_engine) || '-', '#00ff88'))}
                 {row('Point d\'accès API',    engineInfo.api_endpoint, '#8888aa')}
-                {row('Actions sur règles',   <>{engineInfo.actions.map(a => badge(a, a === 'block' ? '#ff0066' : a === 'allow' ? '#00ff88' : '#ffaa00'))}</>)}
-                {row('Types de source',      <>{engineInfo.source_types.map(s => badge(s, s === 'manual' ? '#ffaa00' : '#ff0066'))}</>)}
-                {row('Stockage historique',  engineInfo.storage,      '#8888aa')}
+                {Array.isArray(engineInfo.actions) && row('Actions sur règles',   <>{engineInfo.actions.map(a => badge(a, a === 'block' ? '#ff0066' : a === 'allow' ? '#00ff88' : '#ffaa00'))}</>)}
+                {Array.isArray(engineInfo.source_types) && row('Types de source',      <>{engineInfo.source_types.map(s => badge(s, s === 'manual' ? '#ffaa00' : '#ff0066'))}</>)}                {row('Stockage historique',  engineInfo.storage,      '#8888aa')}
                 {row('Disponibilité',        health.uptime || '-',    '#ffaa00')}
                 {row('Intégration',          engineInfo.integration,  '#8888aa')}
                 {typeof engineInfo.service_name             === 'string' && row('Service',                  engineInfo.service_name,            '#00ff88')}
@@ -286,8 +285,7 @@ const InfrastructureDetails: React.FC = () => {
       {/* ── 4. MACHINE LEARNING ───────────────────────────────────────────── */}
       <div style={sectionStyle}>
         {sectionHeader('ml', <Brain size={18} color="#aa44ff" />, 'Module d \'apprentissage automatique', mlStatus?.status === 'active' ? 'actif' : (mlStatus?.status || '—'), mlStatus?.status === 'active')}
-        {expanded['ml'] && mlStatus && (
-          <div style={{ padding: '20px' }}>
+        {sectionHeader('ml', <Brain size={18} color="#aa44ff" />, "Module d'apprentissage automatique", mlStatus?.status === 'active' ? 'actif' : (mlStatus?.status || '—'), mlStatus?.status === 'active')}          <div style={{ padding: '20px' }}>
             <div style={{
               background: 'rgba(170,68,255,0.08)', border: '1px solid rgba(170,68,255,0.3)',
               borderRadius: '8px', padding: '12px 16px', marginBottom: '20px',

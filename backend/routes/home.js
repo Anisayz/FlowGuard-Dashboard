@@ -6,13 +6,12 @@ const { mlClient, MlEngineError }                  = require('../clients/mlClien
 
 const router = Router();
 
-// ─── GET /health ──────────────────────────────────────────────────────────────
-// Aggregates Ryu probe (existing healthService) + Mitigation Engine + ML Engine
+ 
 router.get('/health', async (req, res, next) => {
   try {
-    // Run all three probes concurrently — never let one failure block others
+   
     const [ryuResult, mitigationResult, mlResult] = await Promise.allSettled([
-      healthService.getHealth(),                // existing Ryu probe
+      healthService.getHealth(),               
       mitigationClient.getHealth(),
       mlClient.getHealth(),
     ]);
@@ -175,13 +174,16 @@ router.get('/stats/recent-alerts', async (req, res, next) => {
         _source:  'live',
       };
     });
-    return res.json(alerts.length ? alerts : dashboardStore.getRecentAlerts());
+    if (alerts.length) {
+      return res.json(alerts);
+    }
+    res.set('X-Data-Source', 'demo');
+    return res.json(dashboardStore.getRecentAlerts());
   } catch (err) {
     if (err instanceof MitigationEngineError) {
       res.set('X-Data-Source', 'demo');
       return res.json(dashboardStore.getRecentAlerts());
-    }
-    next(err);
+    }    next(err);
   }
 });
 

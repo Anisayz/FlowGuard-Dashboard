@@ -57,9 +57,10 @@ export function useInfrastructure(): UseInfrastructureReturn {
   const [lastUpdate, setLastUpdate] = useState('');
 
   // Keep a ref so the interval callback always calls the latest version
-  const fetchRef = useRef<() => Promise<void>>();
+  const fetchRef = useRef<() => Promise<void> | undefined>(undefined);
 
   const fetch = useCallback(async () => {
+    setLoading(true);
     try {
       const result = await fetchInfrastructureData();
       setData(result);
@@ -71,8 +72,7 @@ export function useInfrastructure(): UseInfrastructureReturn {
       console.error('[useInfrastructure]', err);
     } finally {
       setLoading(false);
-    }
-  }, []);
+    }  }, []);
 
   fetchRef.current = fetch;
 

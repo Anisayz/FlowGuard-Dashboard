@@ -104,8 +104,8 @@ export interface InfrastructureData {
 }
 
 
-const get = (path: string) => axios.get(`${API_BASE}${path}`).then(r => r.data);
-
+const get = (path: string) =>
+  axios.get(`${API_BASE.replace(/\/$/, '')}${path}`).then(r => r.data);
 export const fetchHealth     = (): Promise<HealthData>      => get('/health');
 export const fetchSdnInfo    = (): Promise<SdnInfo>         => get('/sdn/info');
 export const fetchEngineInfo = (): Promise<EngineInfo>      => get('/engine/info');

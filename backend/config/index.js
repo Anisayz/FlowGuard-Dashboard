@@ -31,8 +31,7 @@ module.exports = {
   mitigation: {
     baseURL:   process.env.MITIGATION_BASE_URL      || 'http://localhost:9000',
     timeoutMs: Number(process.env.MITIGATION_TIMEOUT_MS  || 8000),
-    apiKey:    process.env.MITIGATION_API_KEY        || '',
-  },
+    apiKey:    process.env.MITIGATION_API_KEY        || undefined,  },
 
   ml: {
     baseURL:   process.env.ML_BASE_URL              || 'http://localhost:8000',

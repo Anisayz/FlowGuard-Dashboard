@@ -10,7 +10,7 @@ export function uiHealth(value: string | undefined): string {
 
 export function uiRyuState(value: { ryu: string } | undefined): string {
   if (value == null ) return '—';
- 
+ if (value == null || value.ryu === '') return '—';
   const v = value.ryu.toLowerCase();
   if (v === 'up') return 'Actif';
   if (v === 'down') return 'Inactif';

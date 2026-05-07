@@ -13,12 +13,11 @@ function mapRule(r) {
     action:       r.action,
     dpid:         r.dpid   != null ? String(r.dpid) : null,
     source:       r.source,
-    rate_kbps:    r.rate_kbps   || null,
-    created_at:   r.created_at  || null,
-    deleted_at:   r.deleted_at  || null,
-    idle_timeout: r.idle_timeout || null,
-    hard_timeout: r.hard_timeout || null,
-    active:       r.active,
+    rate_kbps:    r.rate_kbps   ?? null,
+    created_at:   r.created_at  ?? null,
+    deleted_at:   r.deleted_at  ?? null,
+    idle_timeout: r.idle_timeout ?? null,
+    hard_timeout: r.hard_timeout ?? null,    active:       r.active,
     alert_id:     r.alert_id    ? String(r.alert_id) : null,
     _source: 'live',
   };
@@ -34,7 +33,7 @@ router.get('/rules', async (req, res, next) => {
 
   try {
     const data = await mitigationClient.getRules({
-      active:  active  === 'true' ? true : active === 'false' ? false : undefined,
+     active:  active === 'true' || active === '1' ? true : active === 'false' || active === '0' ? false : undefined,
       source:  typeof source === 'string' ? source : undefined,
       action:  typeof action === 'string' ? action : undefined,
       limit:   limit  ? Number(limit)  : 200,
@@ -63,14 +62,17 @@ router.get('/rules', async (req, res, next) => {
 router.post('/rules', requireAuth, async (req, res, next) => {
   const { src_ip, action, dpid, rate_kbps, idle_timeout, hard_timeout } = req.body || {};
 
-  if (typeof src_ip !== 'string' || typeof action !== 'string') {
-    return res.status(422).json({ detail: 'src_ip and action are required' });
+    if (action === 'ratelimit' && !rate_kbps) {
+     return res.status(422).json({ detail: 'rate_kbps is required for ratelimit' });
+   }
+  if (rate_kbps !== undefined && (isNaN(Number(rate_kbps)) || Number(rate_kbps) < 0)) {
+    return res.status(422).json({ detail: 'rate_kbps must be a non-negative number' });
   }
-  if (!['block', 'ratelimit', 'isolate'].includes(action)) {
-    return res.status(422).json({ detail: 'action must be block | ratelimit | isolate' });
+  if (idle_timeout !== undefined && isNaN(Number(idle_timeout))) {
+    return res.status(422).json({ detail: 'idle_timeout must be a number' });
   }
-  if (action === 'ratelimit' && !rate_kbps) {
-    return res.status(422).json({ detail: 'rate_kbps is required for ratelimit' });
+  if (hard_timeout !== undefined && isNaN(Number(hard_timeout))) {
+    return res.status(422).json({ detail: 'hard_timeout must be a number' });
   }
 
   try {
@@ -111,11 +113,19 @@ router.delete('/rules/:rule_id', requireAuth, async (req, res, next) => {
       if (err.status === 409) {
         return res.status(409).json({ detail: err.message });
       }
-      // Engine down — fall back to soft-delete in fake store so UI stays responsive
-      console.warn('[rules] Mitigation engine unreachable, falling back to local delete:', err.code);
-      const result = dashboardStore.deleteRule(rule_id);
-      res.set('X-Data-Source', 'demo');
-      return res.json({ ...result, _source: 'demo' });
+      // Only fall back to demo mode for connection-level failures
+      if (!err.status || err.status === 502 || err.status === 503) {
+        console.warn('[rules] Mitigation engine unreachable, falling back to local delete:', err.code);
+        try {
+          const result = dashboardStore.deleteRule(rule_id);
+          res.set('X-Data-Source', 'demo');
+          return res.json({ ...result, _source: 'demo' });
+        } catch (storeErr) {
+          return res.status(404).json({ detail: `Rule ${rule_id} not found`, _source: 'demo' });
+        }
+      }
+      // Propagate other engine errors
+      return res.status(err.status).json({ detail: err.message, _source: 'live' });
     }
     next(err);
   }

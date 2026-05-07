@@ -24,8 +24,8 @@ interface FirewallRulesProps {
 const FirewallRules: React.FC<FirewallRulesProps> = ({ rules, onRefresh, availableDpids }) => {
   const [activeTab, setActiveTab] = useState<'active' | 'history'>('active');
 
-  const activeRules  = rules.filter((r) => !r.deleted_at);
-  const historyRules = rules.filter((r) =>  r.deleted_at);
+  const activeRules  = rules;
+  const historyRules = rules;
 
   const tabStyle = (tab: 'active' | 'history'): React.CSSProperties => ({
     padding: '10px 24px',

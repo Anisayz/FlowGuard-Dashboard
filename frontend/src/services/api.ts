@@ -39,8 +39,7 @@ export const logout = () => setAuthToken(null);
 
 export const getMe = () => client.get<AuthUser>('/auth/me').then((r) => r.data);
 
-// ── Rules ────────────────────────────────────────────────────────────────────
-export const getRules      = ()              => client.get<Rule[]>('/rules').then(r => r.data);
+
 export const deleteRule    = (id: string)    => client.delete(`/rules/${id}`);
 export const createRule    = (payload: {
   src_ip: string;
@@ -49,20 +48,31 @@ export const createRule    = (payload: {
   rate_kbps?: number;
 }) => client.post('/rules', payload);
 
-// ── Switches / MAC ───────────────────────────────────────────────────────────
-export const getSwitches   = () => client.get<Switch[]>('/switches').then(r => r.data);
-export const getMacTable   = () => client.get<MacEntry[]>('/mactable').then(r => r.data);
-
+ 
 // ── Health ───────────────────────────────────────────────────────────────────
 export const getHealth     = () => client.get('/health').then(r => r.data);
 
 // ── Topology ─────────────────────────────────────────────────────────────────
 export const getTopology   = () => client.get<TopologyData>('/topology').then(r => r.data);
 
-// ── Alerts ───────────────────────────────────────────────────────────────────
-export const getAlerts     = () => client.get('/alerts').then(r => r.data);
-
+ 
 // ── Stats ────────────────────────────────────────────────────────────────────
 export const getTimeline      = () => client.get('/stats/timeline').then(r => r.data);
 export const getAttackTypes   = () => client.get('/stats/attack-types').then(r => r.data);
 export const getRecentAlerts  = () => client.get('/stats/recent-alerts').then(r => r.data);
+
+ 
+export const getRules = () =>
+  client.get<{ count: number; rules: Rule[] }>('/rules').then(r => r.data.rules ?? []);
+
+ 
+export const getSwitches = () =>
+  client.get<Switch[]>('/switches').then(r =>
+    Array.isArray(r.data) ? r.data : (r.data as any)?.switches ?? []
+  );
+
+export const getMacTable = () =>
+  client.get<{ count: number; entries: MacEntry[] }>('/mactable').then(r => r.data.entries ?? []);
+ 
+export const getAlerts = () =>
+  client.get<{ total: number; count: number; alerts: any[] }>('/alerts').then(r => r.data.alerts ?? []);

@@ -6,9 +6,7 @@ type Props = {
   onLogout: () => void;
 };
 
-/**
- * Wraps authenticated dashboard: shared data + shell (fixed sidebar, scrollable main).
- */
+ 
 export function DashboardRouteTree({ username, onLogout }: Props) {
   return (
     <DashboardDataProvider>

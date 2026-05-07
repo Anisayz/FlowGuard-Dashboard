@@ -8,13 +8,14 @@ export function uiHealth(value: string | undefined): string {
   return value;
 }
 
-export function uiRyuState(value: string | undefined): string {
-  if (value == null || value === '') return '—';
-  const v = value.toLowerCase();
+export function uiRyuState(value: { ryu: string } | undefined): string {
+  if (value == null ) return '—';
+ 
+  const v = value.ryu.toLowerCase();
   if (v === 'up') return 'Actif';
   if (v === 'down') return 'Inactif';
   if (v === 'unknown') return 'Inconnu';
-  return value;
+  return value.ryu;
 }
 
 export function uiSeverity(value: string): string {

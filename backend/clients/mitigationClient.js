@@ -89,6 +89,7 @@ function createHttpClient() {
   if (MITIGATION_API_KEY) {
     headers['X-API-Key'] = MITIGATION_API_KEY;
   }
+  console.log("MITIGATION_API_KEY =", MITIGATION_API_KEY);
   return axios.create({
     baseURL: MITIGATION_BASE_URL.replace(/\/$/, ''),
     timeout: MITIGATION_TIMEOUT_MS,

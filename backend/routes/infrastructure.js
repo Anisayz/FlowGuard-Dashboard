@@ -1,102 +1,126 @@
 const { Router } = require('express');
-const dashboardStore            = require('../services/dashboardStore');
-const networkResourceService    = require('../services/networkResourceService');
-const { sdnClient, SdnControllerError } = require('../services/sdnClient');
-const { mitigationClient, MitigationEngineError } = require('../clients/mitigationClient');
+const { sdnClient, SdnControllerError }            = require('../services/sdnClient');
+const { mitigationClient, MitigationEngineError }  = require('../clients/mitigationClient');
 const { mlClient, MlEngineError }                  = require('../clients/mlClient');
 const config = require('../config');
 
 const router = Router();
- 
+
+// ─── GET /topology ────────────────────────────────────────────────────────────
+// Ryu: GET /topology → { switches: [{dpid, address}], links: [{src_dpid, src_port, dst_dpid, dst_port}] }
 router.get('/topology', async (req, res, next) => {
   try {
-    const data = await networkResourceService.getTopology();
-    res.json(data);
-  } catch (e) {
-    next(e);
-  }
-});
- 
-router.get('/switches', async (req, res, next) => {
-  try {
-    const data = await networkResourceService.getSwitches();
-    res.json(data);
-  } catch (e) {
-    next(e);
-  }
-});
- 
-router.get('/mactable', async (req, res, next) => {
-  try {
-   
-    const data = await sdnClient.get('/mactable');
-    
-    res.json(data);
+    const data = await sdnClient.get('/topology');
+    console.debug('[topology] Raw response from Ryu:', JSON.stringify(data, null, 2));
+    return res.json({ ...data, _source: 'live' });
   } catch (err) {
     if (err instanceof SdnControllerError) {
-      console.warn('[mactable] Ryu unreachable, using demo data:', err.code);
-      res.set('X-Data-Source', 'demo');
-      return res.json({
-        count:   dashboardStore.fakeMacTable.length,
-        entries: dashboardStore.fakeMacTable,
-        _source: 'demo',
+      console.error('[topology] Ryu error:', {
+        status:  err.status,
+        code:    err.code,
+        message: err.message,
       });
+      const status = err.status || 502;
+      return res.status(status).json({ detail: err.message, _source: 'live' });
+    }
+    next(err);
+  }
+});
+
+// ─── GET /switches ────────────────────────────────────────────────────────────
+// Ryu: GET /switches → { switches: [{dpid, address, active_rules}] }
+router.get('/switches', async (req, res, next) => {
+  try {
+    const data = await sdnClient.get('/switches');
+    console.debug('[switches] Raw response from Ryu:', JSON.stringify(data, null, 2));
+    return res.json({ ...data, _source: 'live' });
+  } catch (err) {
+    if (err instanceof SdnControllerError) {
+      console.error('[switches] Ryu error:', {
+        status:  err.status,
+        code:    err.code,
+        message: err.message,
+      });
+      const status = err.status || 502;
+      return res.status(status).json({ detail: err.message, _source: 'live' });
+    }
+    next(err);
+  }
+});
+
+// ─── GET /mactable ────────────────────────────────────────────────────────────
+// Ryu: GET /mactable → { count, entries: [{dpid, mac, port}] }
+router.get('/mactable', async (req, res, next) => {
+  try {
+    const data = await sdnClient.get('/mactable');
+    console.debug('[mactable] Raw response from Ryu:', JSON.stringify(data, null, 2));
+    return res.json({ ...data, _source: 'live' });
+  } catch (err) {
+    if (err instanceof SdnControllerError) {
+      console.error('[mactable] Ryu error:', {
+        status:  err.status,
+        code:    err.code,
+        message: err.message,
+      });
+      const status = err.status || 502;
+      return res.status(status).json({ detail: err.message, _source: 'live' });
     }
     next(err);
   }
 });
 
 // ─── GET /sdn/info ────────────────────────────────────────────────────────────
-// Build live SDN info from Ryu /health + config, fall back to fake
+// Ryu: GET /health → { status, switches, rules, time }
 router.get('/sdn/info', async (req, res, next) => {
   try {
     const ryuHealth = await sdnClient.get('/health');
-    // ryuHealth: { status, switches, rules, time }
+    console.debug('[sdn/info] Raw response from Ryu:', JSON.stringify(ryuHealth, null, 2));
+
     return res.json({
-      api_endpoint:         config.sdn.baseURL,
-      rest_api:             '/firewall/rules, /topology, /switches, /mactable',
-      protocol:             'OpenFlow 1.3',
-      version:              'Ryu SDN Controller',
-      architecture:         'Centralized SDN Controller',
-      status:               ryuHealth.status || 'ok',
-      switches_connected:   ryuHealth.switches ?? null,
-      active_rules:         ryuHealth.rules    ?? null,
-      last_topology_sync:   new Date().toISOString(),
+      api_endpoint:       config.sdn.baseURL,
+      rest_api:           '/firewall/rules, /topology, /switches, /mactable, /health, /dump',
+      protocol:           'OpenFlow 1.3',
+      version:            'Ryu SDN Controller',
+      architecture:       'Centralized SDN Controller',
+      status:             ryuHealth.status,
+      switches_connected: ryuHealth.switches,
+      active_rules:       ryuHealth.rules,
+      last_topology_sync: new Date(ryuHealth.time * 1000).toISOString(),
       _source: 'live',
     });
   } catch (err) {
     if (err instanceof SdnControllerError) {
-      console.warn('[sdn/info] Ryu unreachable, using demo data:', err.code);
-      res.set('X-Data-Source', 'demo');
-      return res.json({
-        ...dashboardStore.fakeSdnInfo,
-        api_endpoint:       config.sdn.baseURL,
-        last_topology_sync: new Date().toISOString(),
-        _source: 'demo',
+      console.error('[sdn/info] Ryu error:', {
+        status:  err.status,
+        code:    err.code,
+        message: err.message,
       });
+      const status = err.status || 502;
+      return res.status(status).json({ detail: err.message, _source: 'live' });
     }
     next(err);
   }
 });
 
 // ─── GET /engine/info ─────────────────────────────────────────────────────────
-// Build live engine info from Mitigation Engine /health, fall back to fake
+// Mitigation Engine: GET /health → { status, db, active_rules, total_alerts, dedup_cache }
 router.get('/engine/info', async (req, res, next) => {
   try {
     const engineHealth = await mitigationClient.getHealth();
-    // engineHealth: { status, db, active_rules, total_alerts, dedup_cache, time }
+    console.debug('[engine/info] Raw response from mitigation engine:', JSON.stringify(engineHealth, null, 2));
+
     return res.json({
-      api_endpoint:       (config.mitigation && config.mitigation.baseURL) ||
-                          process.env.MITIGATION_BASE_URL ||
-                          'http://localhost:9000',
-      status:             engineHealth.status,
-      db:                 engineHealth.db,
-      active_rules:       engineHealth.active_rules,
-      total_alerts:       engineHealth.total_alerts,
-      dedup_cache:        engineHealth.dedup_cache,
-      last_heartbeat:     new Date().toISOString(),
-      actions:            ['block', 'ratelimit', 'isolate'],
-      source_types:       ['manual', 'mitigation_engine'],
+      api_endpoint:   (config.mitigation && config.mitigation.baseURL) ||
+                      process.env.MITIGATION_BASE_URL ||
+                      'http://localhost:9000',
+      status:         engineHealth.status,
+      db:             engineHealth.db,
+      active_rules:   engineHealth.active_rules,
+      total_alerts:   engineHealth.total_alerts,
+      dedup_cache:    engineHealth.dedup_cache,
+      last_heartbeat: new Date().toISOString(),
+      actions:        ['block', 'ratelimit', 'isolate'],
+      source_types:   ['manual', 'mitigation_engine'],
       endpoints: {
         health: 'GET /health',
         alert:  'POST /alert',
@@ -107,38 +131,33 @@ router.get('/engine/info', async (req, res, next) => {
     });
   } catch (err) {
     if (err instanceof MitigationEngineError) {
-      console.warn('[engine/info] Mitigation engine unreachable, using demo data:', err.code);
-      res.set('X-Data-Source', 'demo');
-      return res.json({
-        ...dashboardStore.fakeEngineInfo,
-        last_heartbeat: new Date().toISOString(),
-        _source: 'demo',
+      console.error('[engine/info] Mitigation engine error:', {
+        status:  err.status,
+        code:    err.code,
+        message: err.message,
       });
+      const status = err.status || 502;
+      return res.status(status).json({ detail: err.message, _source: 'live' });
     }
     next(err);
   }
 });
 
 // ─── GET /ml/info ─────────────────────────────────────────────────────────────
-// Live ML Engine /info endpoint — new route the dashboard can use
 router.get('/ml/info', async (req, res, next) => {
   try {
     const info = await mlClient.getInfo();
+    console.debug('[ml/info] Raw response from ML engine:', JSON.stringify(info, null, 2));
     return res.json({ ...info, _source: 'live' });
   } catch (err) {
     if (err instanceof MlEngineError) {
-      console.warn('[ml/info] ML engine unreachable:', err.code);
-      res.set('X-Data-Source', 'demo');
-      return res.json({
-        model_type:      'RandomForestClassifier',
-        anomaly_type:    'Autoencoder (reconstruction error)',
-        n_features:      null,
-        classes:         ['BENIGN', 'DDoS Attack', 'Port Scan', 'Brute Force'],
-        ae_threshold:    0.003863,
-        rf_conf_high:    0.70,
-        verdict_actions: { ATTACK: 'block', SUSPECT: 'alert', ANOMALY: 'rate_limit+alert', BENIGN: 'pass' },
-        _source: 'demo',
+      console.error('[ml/info] ML engine error:', {
+        status:  err.status,
+        code:    err.code,
+        message: err.message,
       });
+      const status = err.status || 502;
+      return res.status(status).json({ detail: err.message, _source: 'live' });
     }
     next(err);
   }

@@ -3,10 +3,10 @@ import { NavLink } from 'react-router-dom';
 import { PATHS } from '../routes/paths';
 
 const SIDEBAR_NAV = [
-  { to: PATHS.home, label: 'Accueil', icon: '🏠', end: true },
-  { to: PATHS.firewallRules, label: 'Pare-feu', icon: '🛡️', end: false },
-  { to: PATHS.alerts, label: 'Alertes', icon: '🚨', end: false },
-  { to: PATHS.infrastructure, label: 'Infrastructure', icon: '🏗️', end: false },
+  { to: PATHS.home, label: 'Accueil', end: true },
+  { to: PATHS.firewallRules, label: 'Pare-feu', end: false },
+  { to: PATHS.alerts, label: 'Alertes',end: false },
+  { to: PATHS.infrastructure, label: 'Infrastructure',  end: false },
 ] as const;
 
 type SidebarProps = {
@@ -17,7 +17,7 @@ type SidebarProps = {
 const Sidebar: FC<SidebarProps> = ({ username, onLogout }) => (
   <aside className="dashboard-sidebar">
     <div className="dashboard-sidebar__header">
-      <div className="dashboard-sidebar__title">🛡️ FlowGuard SDN</div>
+      <div className="dashboard-sidebar__title">FlowGuard SDN</div>
       <div className="dashboard-sidebar__subtitle">Supervision sécurité</div>
       {username && (
         <div className="dashboard-sidebar__user">Utilisateur : {username}</div>
@@ -33,7 +33,7 @@ const Sidebar: FC<SidebarProps> = ({ username, onLogout }) => (
             `dashboard-sidebar__link${isActive ? ' dashboard-sidebar__link--active' : ''}`
           }
         >
-          <span className="dashboard-sidebar__icon">{item.icon}</span>
+          
           <span>{item.label}</span>
         </NavLink>
       ))}

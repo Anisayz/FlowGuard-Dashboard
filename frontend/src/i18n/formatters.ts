@@ -1,5 +1,7 @@
 /** Libellés français pour valeurs techniques renvoyées par l’API */
 
+import type { RyuHealth } from "../types";
+
 export function uiHealth(value: string | undefined): string {
   if (value == null || value === '') return '—';
   const v = value.toLowerCase();
@@ -8,9 +10,9 @@ export function uiHealth(value: string | undefined): string {
   return value;
 }
 
-export function uiRyuState(value: { ryu: string } | undefined): string {
+export function uiRyuState(value: RyuHealth): string {
   if (value == null ) return '—';
- if (value == null || value.ryu === '') return '—';
+ if (value == null || value.ryu === undefined) return '—';
   const v = value.ryu.toLowerCase();
   if (v === 'up') return 'Actif';
   if (v === 'down') return 'Inactif';

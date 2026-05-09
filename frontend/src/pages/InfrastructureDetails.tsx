@@ -7,8 +7,6 @@ import {
 import { useInfrastructure } from '../hooks/useInfrastructure';
 import { uiHealth, uiRyuState } from '../i18n/formatters';
 
-// ─── Local UI helpers ─────────────────────────────────────────────────────────
-
 const sectionStyle: React.CSSProperties = {
   background: 'linear-gradient(135deg, #1e1e2a, #14141e)',
   border: '1px solid #2a2a35', borderRadius: '12px',
@@ -29,8 +27,6 @@ const badge = (text: string, color: string) => (
     fontSize: '11px', marginRight: '6px',
   }}>{text}</span>
 );
-
-// ─── Component ────────────────────────────────────────────────────────────────
 
 const InfrastructureDetails: React.FC = () => {
   const {
@@ -74,7 +70,6 @@ const InfrastructureDetails: React.FC = () => {
     </div>
   );
 
-  // ── Loading ────────────────────────────────────────────────────────────────
   if (loading) return (
     <div style={{ textAlign: 'center', padding: '80px', color: '#00ff88', fontFamily: 'monospace' }}>
       <div style={{ fontSize: '36px', animation: 'spin 1s linear infinite', display: 'inline-block' }}>⟳</div>
@@ -82,7 +77,6 @@ const InfrastructureDetails: React.FC = () => {
     </div>
   );
 
-  // ── Error banner (non-blocking) ────────────────────────────────────────────
   const errorBanner = error && (
     <div style={{
       background: 'rgba(255,0,102,0.1)', border: '1px solid #ff006666',
@@ -93,12 +87,11 @@ const InfrastructureDetails: React.FC = () => {
     </div>
   );
 
-  // ── Derived values from health.ryu (object) ────────────────────────────────
-  const ryuObj        = health?.ryu;                          // the nested object
-  const ryuUp         = ryuObj?.ryu ?? '—';                   // "up" / "down"
-  const ryuController = ryuObj?.controller ?? '—';            // "healthy" / ...
-  const ryuUptime     = ryuObj?.uptime ?? '—';
-  const ryuFlows      = ryuObj?.flows_installed ?? '—';
+  // ── Ryu derived values — all cast to string for safe rendering ─────────────
+  const ryuObj        = health?.ryu;
+  const ryuController = ryuObj?.controller ?? '—';
+  const ryuUptime     = String(ryuObj?.uptime     ?? '—');
+  const ryuFlows      = String(ryuObj?.flows_installed ?? '—');
 
   return (
     <div style={{ fontFamily: 'monospace', color: '#e0e0ff' }}>
@@ -112,7 +105,7 @@ const InfrastructureDetails: React.FC = () => {
         alignItems: 'center', flexWrap: 'wrap', gap: '12px',
       }}>
         <div>
-          <h2 style={{ color: '#00ff88', margin: '0 0 4px', fontSize: '22px' }}>🏗️ Détails infrastructure</h2>
+          <h2 style={{ color: '#00ff88', margin: '0 0 4px', fontSize: '22px' }}> Détails infrastructure</h2>
           <p style={{ color: '#8888aa', margin: 0, fontSize: '12px' }}>
             Vue administrateur • Visibilité système • Dernière mise à jour : {lastUpdate}
           </p>
@@ -133,7 +126,7 @@ const InfrastructureDetails: React.FC = () => {
           'sdn',
           <Server size={18} color="#00ff88" />,
           'Contrôleur SDN (Ryu)',
-         uiRyuState(ryuObj) || String(ryuUp),
+      (typeof ryuObj === 'object' && ryuObj !== null ? uiRyuState(ryuObj) : undefined) || String(ryuObj?.ryu ?? '—'),
           ryuController === 'healthy',
         )}
         {expanded['sdn'] && sdnInfo && (
@@ -156,20 +149,20 @@ const InfrastructureDetails: React.FC = () => {
             </div>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <tbody>
-                {row('Point d\'accès API',         sdnInfo.api_endpoint,  '#8888aa')}
-                {row('API REST',                   sdnInfo.rest_api,      '#8888aa')}
-                {row('Protocole',                  badge(String(sdnInfo.protocol), '#00aaff'))}
-                {row('Version',                    badge(String(sdnInfo.version),  '#00ff88'))}
-                {row('Architecture',               sdnInfo.architecture,  '#8888aa')}
-                {row('Commutateurs',               `${switches.length} commutateur(s) connecté(s)`, '#00ff88')}
+                {row('Point d\'accès API',          sdnInfo.api_endpoint, '#8888aa')}
+                {row('API REST',                    sdnInfo.rest_api,     '#8888aa')}
+                {row('Protocole',                   badge(String(sdnInfo.protocol), '#00aaff'))}
+                {row('Version',                     badge(String(sdnInfo.version),  '#00ff88'))}
+                {row('Architecture',                sdnInfo.architecture, '#8888aa')}
+                {row('Commutateurs',                `${switches.length} commutateur(s) connecté(s)`, '#00ff88')}
                 {typeof sdnInfo.last_topology_sync === 'string' &&
                   row('Dernière synchro topologie', sdnInfo.last_topology_sync, '#8888aa')}
                 {ryuObj?.switches_connected != null &&
-                  row('Commutateurs (Ryu)',         String(ryuObj.switches_connected), '#00aaff')}
+                  row('Commutateurs (Ryu)',          String(ryuObj.switches_connected), '#00aaff')}
                 {ryuObj?.mitigation_latency_ms != null &&
-                  row('Latence mitigation',         `${ryuObj.mitigation_latency_ms} ms`, '#8888aa')}
+                  row('Latence mitigation',          `${ryuObj.mitigation_latency_ms} ms`, '#8888aa')}
                 {ryuObj?.ml_feed_status &&
-                  row('Flux ML',                   badge(ryuObj.ml_feed_status, ryuObj.ml_feed_status === 'connected' ? '#00ff88' : '#ff0066'))}
+                  row('Flux ML', badge(ryuObj.ml_feed_status, ryuObj.ml_feed_status === 'connected' ? '#00ff88' : '#ff0066'))}
               </tbody>
             </table>
           </div>
@@ -197,7 +190,7 @@ const InfrastructureDetails: React.FC = () => {
                     borderRadius: '10px', padding: '16px',
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-                      <span style={{ fontSize: '24px' }}>🔀</span>
+                     
                       <div>
                         <div style={{ color: '#00aaff', fontWeight: 'bold', fontSize: '14px' }}>{sw.dpid}</div>
                         <div style={{ color: '#8888aa', fontSize: '11px' }}>Commutateur OpenFlow</div>
@@ -255,10 +248,10 @@ const InfrastructureDetails: React.FC = () => {
           <div style={{ padding: '20px' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', marginBottom: '20px' }}>
               {[
-                { label: 'Règles actives',   value: activeRules.length,                                                color: '#00ff88' },
-                { label: 'Auto-mitigation',  value: activeRules.filter(r => r.source === 'mitigation_engine').length,  color: '#ff0066' },
-                { label: 'Règles manuelles', value: activeRules.filter(r => r.source === 'manual').length,             color: '#ffaa00' },
-                { label: 'Total historique', value: rules.length,                                                       color: '#00aaff' },
+                { label: 'Règles actives',   value: activeRules.length,                                               color: '#00ff88' },
+                { label: 'Auto-mitigation',  value: activeRules.filter(r => r.source === 'mitigation_engine').length, color: '#ff0066' },
+                { label: 'Règles manuelles', value: activeRules.filter(r => r.source === 'manual').length,            color: '#ffaa00' },
+                { label: 'Total historique', value: rules.length,                                                      color: '#00aaff' },
               ].map(({ label, value, color }) => (
                 <div key={label} style={{
                   background: '#14141e', border: '1px solid #2a2a35',
@@ -271,12 +264,12 @@ const InfrastructureDetails: React.FC = () => {
             </div>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <tbody>
-                {row('Statut',            badge(engineInfo.status ?? '-', engineInfo.status === 'ok' ? '#00ff88' : '#ff0066'))}
+                {row('Statut',             badge(engineInfo.status ?? '-', engineInfo.status === 'ok' ? '#00ff88' : '#ff0066'))}
                 {row('Point d\'accès API', engineInfo.api_endpoint, '#8888aa')}
-                {row('Base de données',   badge(engineInfo.db ?? '-', engineInfo.db === 'ok' || engineInfo.db === 'connected' ? '#00ff88' : '#ff0066'))}
-                {row('Cache dédup',       String(engineInfo.dedup_cache ?? '-'), '#8888aa')}
-                {row('Alertes totales',   String(engineInfo.total_alerts ?? '-'), '#00aaff')}
-                {row('Dernier signal',    engineInfo.last_heartbeat ?? '-', '#8888aa')}
+                {row('Base de données',    badge(String(engineInfo.db ?? '-'), engineInfo.db === 'ok' || engineInfo.db === 'connected' ? '#00ff88' : '#ff0066'))}
+                {row('Cache dédup',        String(engineInfo.dedup_cache ?? '-'), '#8888aa')}
+                {row('Alertes totales',    String(engineInfo.total_alerts ?? '-'), '#00aaff')}
+                {row('Dernier signal',     String(engineInfo.last_heartbeat ?? '-'), '#8888aa')}
                 {Array.isArray(engineInfo.actions) && row(
                   'Actions sur règles',
                   <>{engineInfo.actions.map(a => badge(a, a === 'block' ? '#ff0066' : a === 'isolate' ? '#ffaa00' : '#00aaff'))}</>,
@@ -320,8 +313,8 @@ const InfrastructureDetails: React.FC = () => {
             ) : (
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <tbody>
-                  {row('Statut',                badge(mlStatus.status ?? '-', mlStatus.status === 'active' ? '#00ff88' : '#ff0066'))}
-                  {row('Modèles chargés',        mlStatus.models_loaded ? '✔ Oui' : '✘ Non', mlStatus.models_loaded ? '#00ff88' : '#ff0066')}
+                  {row('Statut',          badge(mlStatus.status, mlStatus.status === 'active' ? '#00ff88' : '#ff0066'))}
+                  {row('Modèles chargés', mlStatus.models_loaded ? '✔ Oui' : '✘ Non', mlStatus.models_loaded ? '#00ff88' : '#ff0066')}
                   {mlStatus.algorithm    && row('Algorithme',              badge(mlStatus.algorithm, '#aa44ff'))}
                   {mlStatus.anomaly_type && row('Détecteur d\'anomalies',  mlStatus.anomaly_type, '#8888aa')}
                   {mlStatus.n_features   != null && row('Caractéristiques d\'entrée', String(mlStatus.n_features), '#8888aa')}
@@ -332,10 +325,10 @@ const InfrastructureDetails: React.FC = () => {
                   )}
                   {mlStatus.ae_threshold  != null && row('Seuil autoencodeur',   String(mlStatus.ae_threshold), '#8888aa')}
                   {mlStatus.rf_conf_high  != null && row('Confiance RF (haute)', String(mlStatus.rf_conf_high), '#8888aa')}
-                  {mlStatus.verdict_actions && typeof mlStatus.verdict_actions === 'object' && row(
+                  {mlStatus.verdict_actions && row(
                     'Actions par verdict',
                     <div style={{ fontSize: '12px', lineHeight: 1.6 }}>
-                      {Object.entries(mlStatus.verdict_actions as Record<string, string>).map(([verdict, action]) => (
+                      {Object.entries(mlStatus.verdict_actions).map(([verdict, action]) => (
                         <div key={verdict}>
                           <span style={{ color: '#8888aa' }}>{verdict}:</span>{' '}
                           {badge(action, verdict === 'ATTACK' ? '#ff0066' : verdict === 'BENIGN' ? '#00ff88' : '#ffaa00')}

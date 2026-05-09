@@ -1,16 +1,6 @@
 import React from 'react';
+import type { Rule } from '../types';
  
-interface Rule {
-  rule_id:     string;
-  src_ip:      string;
-  action:      string;
-  dpid:        string;
-  source:      string;
-  created_at:  string;
-  deleted_at?: string | null;
-  alert_id?:   string | null;
-  active:      boolean;  
-}
 
 
 interface RuleHistoryProps { rules: Rule[]; }

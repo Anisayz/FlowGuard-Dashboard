@@ -2,19 +2,8 @@ import React, { useState } from 'react';
 import AddRuleForm from './AddRuleForm';
 import RulesTable from './RulesTable';
 import RuleHistory from './RuleHistory';
-
-interface Rule {
-  rule_id: string;
-  src_ip: string;
-  action: string;
-  dpid: string;
-  source: string;
-  rate_kbps?: number | null;
-  created_at: string;
-  deleted_at?: string | null;
-  alert_id?: string | null;
-  active : boolean
-}
+import type { Rule } from '../types';
+ 
 
 interface FirewallRulesProps {
   rules: Rule[];
@@ -52,7 +41,7 @@ const historyRules = rules.filter(r => !r.active);
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
           <div>
-            <h2 style={{ color: '#00ff88', margin: '0 0 4px', fontSize: '20px' }}>🛡️ Règles pare-feu</h2>
+            <h2 style={{ color: '#00ff88', margin: '0 0 4px', fontSize: '20px' }}>Règles pare-feu</h2>
             <p style={{ color: '#8888aa', margin: 0, fontSize: '12px' }}>
               Gestion et suivi des règles de filtrage
             </p>
@@ -60,10 +49,10 @@ const historyRules = rules.filter(r => !r.active);
           {/* Compteurs */}
           <div style={{ display: 'flex', gap: '10px' }}>
             <span style={{ background: 'rgba(0,255,136,0.1)', border: '1px solid rgba(0,255,136,0.3)', color: '#00ff88', borderRadius: '6px', padding: '4px 12px', fontSize: '12px' }}>
-              🟢 {activeRules.length} actives
+              {activeRules.length} actives
             </span>
             <span style={{ background: 'rgba(136,136,170,0.1)', border: '1px solid rgba(136,136,170,0.3)', color: '#8888aa', borderRadius: '6px', padding: '4px 12px', fontSize: '12px' }}>
-              📜 {historyRules.length} historique
+               {historyRules.length} historique
             </span>
           </div>
         </div>
@@ -81,10 +70,10 @@ const historyRules = rules.filter(r => !r.active);
         {/* Tab Bar */}
         <div style={{ display: 'flex', borderBottom: '1px solid #2a2a35' }}>
           <button style={tabStyle('active')}  onClick={() => setActiveTab('active')}>
-            🔴 Règles actives ({activeRules.length})
+             Règles actives ({activeRules.length})
           </button>
           <button style={tabStyle('history')} onClick={() => setActiveTab('history')}>
-            📜 Historique ({historyRules.length})
+             Historique ({historyRules.length})
           </button>
         </div>
 

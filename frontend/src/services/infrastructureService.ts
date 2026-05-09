@@ -1,126 +1,57 @@
 /**
  * infrastructureService.ts
  * ------------------------
- * All API calls for the Infrastructure page.
- * Unwraps envelope responses so callers always get plain typed values.
+ * Thin fetch layer for the Infrastructure page.
+ * All types live in types.ts — nothing is defined here.
  */
 
 import axios from 'axios';
 import { API_BASE } from './api';
+import type {
+  HealthData,
+  Switch,
+  MacEntry,
+  Rule,
+  SdnInfo,
+  EngineInfo,
+  MlStatus,
+  InfrastructureData,
+} from '../types';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Re-export so useInfrastructure.ts can import from one place ──────────────
+export type {
+  HealthData,
+  Switch,
+  MacEntry,
+  Rule,
+  SdnInfo,
+  EngineInfo,
+  MlStatus,
+  InfrastructureData,
+};
 
-export interface Switch {
-  dpid: string;
-  n_tables?: number;
-  capabilities?: number;
-}
-
-export interface MacEntry {
-  dpid: string;
-  mac: string;
-  port: number;
-}
-
-export interface Rule {
-  rule_id: string;
-  src_ip: string;
-  action: string;
-  dpid: string;
-  source: string;
-  rate_kbps?: number | null;
-  created_at: string;
-  deleted_at?: string | null;
-  active?: boolean;
-  alert_id?: string | null;
-}
-
-export interface SdnInfo {
-  api_endpoint: string;
-  rest_api: string;
-  protocol: string;
-  version: string;
-  architecture: string;
-  [key: string]: unknown;
-}
-
-export interface EngineInfo {
-  api_endpoint: string;
-  actions: string[];
-  source_types: string[];
-  storage: string;
-  integration: string;
-  [key: string]: unknown;
-}
-
-export interface MlDetection {
-  time: string;
-  src_ip: string;
-  attack_type: string;
-  confidence: string;
-  action: string;
-  action_color: string;
-}
-
-export interface MlStat {
-  count: number;
-  pct: number;
-  color: string;
-}
-
-export interface MlStatus {
-  status: string;
-  algorithm: string;
-  input_features: string;
-  output_classes: string[];
-  training_data: string;
-  accuracy: number;
-  last_trained: string;
-  inference_time: string;
-  confidence: number;
-  flows_analyzed: number;
-  stats: Record<string, MlStat>;
-  recent_detections: MlDetection[];
-}
-
-export interface HealthData {
-  controller?: string;
-  mitigation_engine?: string;
-  ryu?: string;
-  uptime?: string;
-  flows_installed?: number;
-  switches_connected?: number;
-  [key: string]: unknown;
-}
-
-export interface InfrastructureData {
-  health: HealthData;
-  switches: Switch[];
-  macTable: MacEntry[];
-  rules: Rule[];
-  sdnInfo: SdnInfo | null;
-  engineInfo: EngineInfo | null;
-  mlStatus: MlStatus | null;
-}
-
+// ─── HTTP helper ──────────────────────────────────────────────────────────────
 
 const get = (path: string) =>
   axios.get(`${API_BASE.replace(/\/$/, '')}${path}`).then(r => r.data);
-export const fetchHealth     = (): Promise<HealthData>      => get('/health');
-export const fetchSdnInfo    = (): Promise<SdnInfo>         => get('/sdn/info');
-export const fetchEngineInfo = (): Promise<EngineInfo>      => get('/engine/info');
-export const fetchMlStatus   = (): Promise<MlStatus>        => get('/ml/status');
+
+// ─── Individual fetchers ──────────────────────────────────────────────────────
+
+export const fetchHealth     = (): Promise<HealthData>  => get('/health');
+export const fetchSdnInfo    = (): Promise<SdnInfo>     => get('/sdn/info');
+export const fetchEngineInfo = (): Promise<EngineInfo>  => get('/engine/info');
+export const fetchMlStatus   = (): Promise<MlStatus>    => get('/ml/status');
 
 export const fetchSwitches = (): Promise<Switch[]> =>
-  get('/switches').then(d => Array.isArray(d) ? d : (d?.switches ?? []));
+  get('/switches').then(d => (Array.isArray(d) ? d : (d?.switches ?? [])));
 
 export const fetchMacTable = (): Promise<MacEntry[]> =>
-  get('/mactable').then(d => Array.isArray(d) ? d : (d?.entries ?? []));
+  get('/mactable').then(d => (Array.isArray(d) ? d : (d?.entries ?? [])));
 
 export const fetchRules = (): Promise<Rule[]> =>
-  get('/rules').then(d => Array.isArray(d) ? d : (d?.rules ?? []));
+  get('/rules').then(d => (Array.isArray(d) ? d : (d?.rules ?? [])));
 
-// ─── Aggregate fetch (all at once) ───────────────────────────────────────────
+// ─── Aggregate fetch ──────────────────────────────────────────────────────────
 
 export async function fetchInfrastructureData(): Promise<InfrastructureData> {
   const [health, switches, macTable, rules, sdnInfo, engineInfo, mlStatus] =
@@ -133,6 +64,14 @@ export async function fetchInfrastructureData(): Promise<InfrastructureData> {
       fetchEngineInfo(),
       fetchMlStatus(),
     ]);
+
+  if (health.status     === 'rejected') console.error('[infra] /health failed:',      health.reason);
+  if (switches.status   === 'rejected') console.error('[infra] /switches failed:',    switches.reason);
+  if (macTable.status   === 'rejected') console.error('[infra] /mactable failed:',    macTable.reason);
+  if (rules.status      === 'rejected') console.error('[infra] /rules failed:',       rules.reason);
+  if (sdnInfo.status    === 'rejected') console.error('[infra] /sdn/info failed:',    sdnInfo.reason);
+  if (engineInfo.status === 'rejected') console.error('[infra] /engine/info failed:', engineInfo.reason);
+  if (mlStatus.status   === 'rejected') console.error('[infra] /ml/status failed:',   mlStatus.reason);
 
   return {
     health:     health.status     === 'fulfilled' ? health.value     : {},

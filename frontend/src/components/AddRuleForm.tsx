@@ -53,9 +53,9 @@ const AddRuleForm: React.FC<AddRuleFormProps> = ({ availableDpids, onRuleAdded }
           <label style={{ color: '#8888aa', fontSize: '11px' }}>Action</label>
           <select style={{ ...inputStyle, width: '130px' }} value={newRule.action}
             onChange={(e) => setNewRule({ ...newRule, action: e.target.value })}>
-            <option value="block">🔴 Bloquer</option>
-            <option value="allow">🟢 Autoriser</option>
-            <option value="ratelimit">🟡 Limiter le débit</option>
+            <option value="block"> Bloquer</option>
+            <option value="allow">Autoriser</option>
+            <option value="ratelimit">Limiter le débit</option>
           </select>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>

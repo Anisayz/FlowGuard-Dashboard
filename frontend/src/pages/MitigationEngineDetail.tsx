@@ -160,7 +160,7 @@ const MitigationEngineDetail: React.FC = () => {
           {/* Recent auto-mitigated rules */}
           <div style={cardStyle}>
             <h3 style={{ color: '#00ff88', margin: '0 0 16px', borderLeft: '3px solid #ff0066', paddingLeft: '12px' }}>
-              🛡️ Mitigations automatiques récentes
+               Mitigations automatiques récentes
             </h3>
             {autoRules.length === 0 ? (
               <p style={{ color: '#8888aa', fontSize: '13px' }}>Aucune mitigation automatique pour le moment.</p>

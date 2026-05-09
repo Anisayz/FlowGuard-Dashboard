@@ -1,32 +1,21 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getRules, getSwitches, getAlerts, getTimeline, getAttackTypes, getRecentAlerts } from '../services/api';
-
-export interface DashboardStats {
-  totalRules:     number;
-  activeRules:    number;
-  blockedAttacks: number;
-  activeSwitches: number;
-}
-
-export interface TimelinePoint { time: string; alerts: number; blocked: number; datasets: string[] }
-export interface AttackType    { name: string; value: number; color: string; }
-export interface RecentAlert   {
-  time: string; src: string; dst: string;
-  type: string; severity: string; sColor: string; status: string;
-}
+import type { AttackType, DashboardStats, RecentAlert, Timeline } from '../types';
 
 interface UseDashboardStatsReturn {
   stats:        DashboardStats;
-  timeline:     TimelinePoint[];
+  timeline:     Timeline;
   attackTypes:  AttackType[];
   recentAlerts: RecentAlert[];
 }
+
+const EMPTY_TIMELINE: Timeline = { labels: [], datasets: [] };
 
 export function useDashboardStats(intervalMs = 20_000): UseDashboardStatsReturn {
   const [stats,        setStats]        = useState<DashboardStats>({
     totalRules: 0, activeRules: 0, blockedAttacks: 0, activeSwitches: 0,
   });
-  const [timeline,     setTimeline]     = useState<TimelinePoint[]>([]);
+  const [timeline,     setTimeline]     = useState<Timeline>(EMPTY_TIMELINE);
   const [attackTypes,  setAttackTypes]  = useState<AttackType[]>([]);
   const [recentAlerts, setRecentAlerts] = useState<RecentAlert[]>([]);
 
@@ -41,7 +30,14 @@ export function useDashboardStats(intervalMs = 20_000): UseDashboardStatsReturn 
         getRecentAlerts(),
       ]);
 
-      const activeRules = rulesRes.filter((r: any) => !r.deleted_at);
+      console.debug('[useDashboardStats] rules:',        rulesRes);
+      console.debug('[useDashboardStats] switches:',     switchesRes);
+      console.debug('[useDashboardStats] alerts:',       alertsRes);
+      console.debug('[useDashboardStats] timeline:',     timelineRes);
+      console.debug('[useDashboardStats] attackTypes:',  typesRes);
+      console.debug('[useDashboardStats] recentAlerts:', recentRes);
+
+      const activeRules = rulesRes.filter((r: any) => r.active === true);
       const blocked     = alertsRes.filter((a: any) => a.status === 'blocked').length;
 
       setStats({
@@ -50,11 +46,19 @@ export function useDashboardStats(intervalMs = 20_000): UseDashboardStatsReturn 
         blockedAttacks: blocked,
         activeSwitches: switchesRes.length,
       });
-      setTimeline(timelineRes);
-      setAttackTypes(typesRes);
-      setRecentAlerts(recentRes);
+
+      // Backend returns { labels: string[], datasets: TimelineDataset[], _source? }
+      // Guard against unexpected shapes
+      setTimeline(
+        timelineRes && Array.isArray(timelineRes.labels) && Array.isArray(timelineRes.datasets)
+          ? timelineRes
+          : EMPTY_TIMELINE,
+      );
+
+      setAttackTypes(Array.isArray(typesRes)  ? typesRes  : []);
+      setRecentAlerts(Array.isArray(recentRes) ? recentRes : []);
     } catch (err) {
-      console.error('Dashboard fetch error:', err);
+      console.error('[useDashboardStats] fetch error:', err);
     }
   }, []);
 

@@ -15,8 +15,13 @@ interface DashboardHomeProps {
   error?:    string;
 }
 
+const PIE_COLORS = [
+  '#ff0066', '#ffaa00', '#aa00ff', '#00aaff', '#00ff88',
+  '#ff6600', '#ff00cc', '#00ffff', '#ffff00', '#6666ff',
+];
+
 const DashboardHome: React.FC<DashboardHomeProps> = ({ topology, isLoading, error }) => {
-  const { stats, timeline, attackTypes, recentAlerts} = useDashboardStats();
+  const { stats, timeline, attackTypes, recentAlerts } = useDashboardStats();
 
   const cardStyle: React.CSSProperties = {
     background: 'linear-gradient(135deg, #1e1e2a, #14141e)',
@@ -36,20 +41,19 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ topology, isLoading, erro
     background: 'rgba(0,255,136,0.1)', border: '1px solid rgba(0,255,136,0.3)',
     color: '#00ff88', borderRadius: '6px', padding: '3px 10px', fontSize: '12px',
   };
-   const switchCount = topology ? Object.keys(topology.switches).length : 0;
+
+  const switchCount = topology ? Object.keys(topology.switches).length : 0;
   const graphData   = topology ? transformToGraphData(topology) : null;
-const PIE_COLORS = [
-  '#ff0066', // red-pink   
-  '#ffaa00', // amber       
-  '#aa00ff', // violet     
-  '#00aaff', // sky blue   
-  '#00ff88', // mint green
-  '#ff6600', // orange
-  '#ff00cc', // magenta
-  '#00ffff', // cyan
-  '#ffff00', // yellow
-  '#6666ff', // indigo
-];
+
+  // Flatten Timeline object → recharts row array
+  const timelineRows = timeline.labels.map((label, i) => ({
+    time:    label,
+    ATTACK:  timeline.datasets.find(d => d.label === 'ATTACK')?.data[i]  ?? 0,
+    SUSPECT: timeline.datasets.find(d => d.label === 'SUSPECT')?.data[i] ?? 0,
+    ANOMALY: timeline.datasets.find(d => d.label === 'ANOMALY')?.data[i] ?? 0,
+    BENIGN:  timeline.datasets.find(d => d.label === 'BENIGN')?.data[i]  ?? 0,
+  }));
+
   return (
     <div style={{ background: '#0a0a12', minHeight: '100vh', color: '#e0e0ff', padding: '20px', fontFamily: 'monospace' }}>
 
@@ -66,13 +70,12 @@ const PIE_COLORS = [
       {/* Stats Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
         {[
-          { label: 'Règles totales',      value: stats.totalRules,     color: '#00ff88'},
+          { label: 'Règles totales',      value: stats.totalRules,     color: '#00ff88' },
           { label: 'Règles actives',      value: stats.activeRules,    color: '#ffaa00' },
           { label: 'Attaques bloquées',   value: stats.blockedAttacks, color: '#ff0066' },
-          { label: 'Commutateurs actifs', value: stats.activeSwitches, color: '#00aaff'  },
+          { label: 'Commutateurs actifs', value: stats.activeSwitches, color: '#00aaff' },
         ].map((card) => (
           <div key={card.label} style={{ ...cardStyle, textAlign: 'center' }}>
-            <div style={{ fontSize: '28px' }}>{card.icon}</div>
             <div style={{ fontSize: '32px', fontWeight: 'bold', color: card.color, margin: '6px 0' }}>
               {card.value}
             </div>
@@ -83,69 +86,51 @@ const PIE_COLORS = [
 
       {/* Charts */}
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px', marginBottom: '20px' }}>
+
+        {/* Timeline */}
         <div style={cardStyle}>
           <h3 style={{ color: '#00ff88', margin: '0 0 16px', fontSize: '14px' }}>Chronologie des alertes</h3>
-          {timeline.length === 0 ? (
+          {timelineRows.length === 0 ? (
             <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8888aa', fontSize: '12px' }}>
-              Chargement…
+              Aucune donnée de chronologie.
             </div>
           ) : (
-  <ResponsiveContainer width="100%" height={220}>
-    <AreaChart
-      data={timeline.labels?.map((label, i) => ({
-        time:    label,
-        ATTACK:  timeline.datasets?.find(d => d.label === 'ATTACK')?.data[i]  ?? 0,
-        SUSPECT: timeline.datasets?.find(d => d.label === 'SUSPECT')?.data[i] ?? 0,
-        ANOMALY: timeline.datasets?.find(d => d.label === 'ANOMALY')?.data[i] ?? 0,
-        BENIGN:  timeline.datasets?.find(d => d.label === 'BENIGN')?.data[i]  ?? 0,
-      })) ?? []}
-    >
-      <CartesianGrid strokeDasharray="3 3" stroke="#2a2a3a" />
-      <XAxis dataKey="time"  stroke="#8888aa" tick={{ fontSize: 11 }} />
-      <YAxis stroke="#8888aa" tick={{ fontSize: 11 }} />
-      <Tooltip {...tooltipStyle} />
-      <Legend wrapperStyle={{ fontSize: '12px' }} />
-      <Area type="monotone" dataKey="ATTACK"  stroke="#ff0066" fill="#ff006633" name="Attack"  />
-      <Area type="monotone" dataKey="SUSPECT" stroke="#ffaa00" fill="#ffaa0033" name="Suspect" />
-      <Area type="monotone" dataKey="ANOMALY" stroke="#aa00ff" fill="#aa00ff33" name="Anomaly" />
-      <Area type="monotone" dataKey="BENIGN"  stroke="#00aaff" fill="#00aaff33" name="Benign"  />
-    </AreaChart>
-  </ResponsiveContainer>
-)}
+            <ResponsiveContainer width="100%" height={220}>
+              <AreaChart data={timelineRows}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#2a2a3a" />
+                <XAxis dataKey="time"  stroke="#8888aa" tick={{ fontSize: 11 }} />
+                <YAxis stroke="#8888aa" tick={{ fontSize: 11 }} />
+                <Tooltip {...tooltipStyle} />
+                <Legend wrapperStyle={{ fontSize: '12px' }} />
+                <Area type="monotone" dataKey="ATTACK"  stroke="#ff0066" fill="#ff006633" name="Attack"  />
+                <Area type="monotone" dataKey="SUSPECT" stroke="#ffaa00" fill="#ffaa0033" name="Suspect" />
+                <Area type="monotone" dataKey="ANOMALY" stroke="#aa00ff" fill="#aa00ff33" name="Anomaly" />
+                <Area type="monotone" dataKey="BENIGN"  stroke="#00aaff" fill="#00aaff33" name="Benign"  />
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
         </div>
 
+        {/* Attack types pie */}
         <div style={cardStyle}>
           <h3 style={{ color: '#00ff88', margin: '0 0 16px', fontSize: '14px' }}>Types d'attaque</h3>
           {attackTypes.length === 0 ? (
             <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8888aa', fontSize: '12px' }}>
-              Chargement…
+              Aucune donnée.
             </div>
-         ) : (
-  <ResponsiveContainer width="100%" height={220}>
-    <PieChart>
-      <Pie
-        data={attackTypes}
-        dataKey="value"
-        nameKey="name"
-        cx="50%"
-        cy="50%"
-        outerRadius={75}
-        paddingAngle={3}
-      >
-        {attackTypes.map((entry, i) => (
-          <Cell
-            key={i}
-            fill={entry.color || PIE_COLORS[i % PIE_COLORS.length]}
-            stroke="#0d0d1a"
-            strokeWidth={2}
-          />
-        ))}
-      </Pie>
-      <Tooltip {...tooltipStyle} />
-      <Legend wrapperStyle={{ fontSize: '11px' }} />
-    </PieChart>
-  </ResponsiveContainer>
-)}
+          ) : (
+            <ResponsiveContainer width="100%" height={220}>
+              <PieChart>
+                <Pie data={attackTypes} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={75} paddingAngle={3}>
+                  {attackTypes.map((entry, i) => (
+                    <Cell key={i} fill={entry.color || PIE_COLORS[i % PIE_COLORS.length]} stroke="#0d0d1a" strokeWidth={2} />
+                  ))}
+                </Pie>
+                <Tooltip {...tooltipStyle} />
+                <Legend wrapperStyle={{ fontSize: '11px' }} />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
         </div>
       </div>
 
@@ -213,15 +198,14 @@ const PIE_COLORS = [
           </div>
           {topology && (
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              {/* ✅ switches is a dict — use Object.keys().length */}
               <span style={badgeStyle}>
                 {switchCount} commutateur{switchCount !== 1 ? 's' : ''}
               </span>
               <span style={{ ...badgeStyle, background: 'rgba(0,170,255,0.1)', border: '1px solid rgba(0,170,255,0.3)', color: '#00aaff' }}>
-                  {topology.hosts.length} hôte{topology.hosts.length !== 1 ? 's' : ''}
+                {topology.hosts.length} hôte{topology.hosts.length !== 1 ? 's' : ''}
               </span>
               <span style={{ ...badgeStyle, background: 'rgba(255,170,0,0.1)', border: '1px solid rgba(255,170,0,0.3)', color: '#ffaa00' }}>
-                 {Math.floor(topology.links.length / 2)} liaison{Math.floor(topology.links.length / 2) !== 1 ? 's' : ''}
+                {Math.floor(topology.links.length / 2)} liaison{Math.floor(topology.links.length / 2) !== 1 ? 's' : ''}
               </span>
             </div>
           )}
@@ -251,12 +235,13 @@ const PIE_COLORS = [
               <Network size={48} color="rgba(136,136,170,0.4)" style={{ margin: '0 auto 12px' }} />
               <p style={{ color: '#8888aa', fontSize: '13px' }}>Aucune donnée de topologie</p>
               <p style={{ color: '#555577', fontSize: '11px', marginTop: '4px' }}>
-                Connectez le contrôleur Ryu ou utilisez le mode démo
+                Connectez le contrôleur Ryu pour afficher la topologie.
               </p>
             </div>
           )}
         </div>
       </div>
+
     </div>
   );
 };

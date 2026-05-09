@@ -1,17 +1,8 @@
 import React from 'react';
 import { deleteRule } from '../services/api';
+import type { Rule } from '../types';
 
-interface Rule {
-  rule_id:    string;
-  src_ip:     string;
-  action:     string;
-  dpid:       string;
-  source:     string;
-  rate_kbps?: number | null;
-  created_at: string;
-  active:     boolean;       
-  deleted_at?: string | null;  
-}
+ 
 
 interface RulesTableProps { rules: Rule[]; onDelete: () => void; }
 
@@ -35,7 +26,7 @@ const RulesTable: React.FC<RulesTableProps> = ({ rules, onDelete }) => {
   return (
     <div style={{ background: 'linear-gradient(135deg, #1e1e2a, #14141e)', border: '1px solid #2a2a3a', borderRadius: '12px', overflow: 'hidden' }}>
       <h3 style={{ color: '#00ff88', padding: '16px 20px', margin: 0, borderBottom: '1px solid #2a2a3a', fontFamily: 'monospace' }}>
-        🔴 Règles actives
+         Règles actives
       </h3>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', fontFamily: 'monospace' }}>
         <thead>

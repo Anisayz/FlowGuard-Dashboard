@@ -13,6 +13,7 @@ interface Rule {
   created_at: string;
   deleted_at?: string | null;
   alert_id?: string | null;
+  active : boolean
 }
 
 interface FirewallRulesProps {
@@ -23,9 +24,11 @@ interface FirewallRulesProps {
 
 const FirewallRules: React.FC<FirewallRulesProps> = ({ rules, onRefresh, availableDpids }) => {
   const [activeTab, setActiveTab] = useState<'active' | 'history'>('active');
-
-  const activeRules  = rules.filter(r => !r.deleted_at);
-  const historyRules = rules.filter(r =>  r.deleted_at);
+const activeRules  = rules.filter(r => r.active);
+const historyRules = rules.filter(r => !r.active);
+  console.log('rules total:', rules.length, '| active:', activeRules.length, '| history:', historyRules.length);
+  console.log('sample rule:', rules[0]);
+  
   const tabStyle = (tab: 'active' | 'history'): React.CSSProperties => ({
     padding: '10px 24px',
     cursor: 'pointer',

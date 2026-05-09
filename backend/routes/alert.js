@@ -56,7 +56,7 @@ router.get('/alerts', async (req, res, next) => {
       offset:   offset ? Number(offset) : 0,
     });
 
-    console.debug('[alerts] Raw response from mitigation engine:', JSON.stringify(data, null, 2));
+  //  console.debug('[alerts] Raw response from mitigation engine:', JSON.stringify(data, null, 2));
 
     let alerts = (data.alerts || []).map(mapAlert);
 
@@ -72,11 +72,11 @@ router.get('/alerts', async (req, res, next) => {
     });
   } catch (err) {
     if (err instanceof MitigationEngineError) {
-      console.error('[alerts] Mitigation engine error:', {
+      /*console.error('[alerts] Mitigation engine error:', {
         status:  err.status,
         code:    err.code,
         message: err.message,
-      });
+      });*/
       const status = err.status || 502;
       return res.status(status).json({ detail: err.message, _source: 'live' });
     }
@@ -90,15 +90,15 @@ router.get('/alerts/:id', async (req, res, next) => {
 
   try {
     const alert = await mitigationClient.getAlert(id);
-    console.debug(`[alerts/${id}] Raw response from mitigation engine:`, JSON.stringify(alert, null, 2));
+  //  console.debug(`[alerts/${id}] Raw response from mitigation engine:`, JSON.stringify(alert, null, 2));
     return res.json({ ...mapAlert(alert), _source: 'live' });
   } catch (err) {
     if (err instanceof MitigationEngineError) {
-      console.error(`[alerts/${id}] Mitigation engine error:`, {
+     /* console.error(`[alerts/${id}] Mitigation engine error:`, {
         status:  err.status,
         code:    err.code,
         message: err.message,
-      });
+      });*/
       const status = err.status || 502;
       return res.status(status).json({ detail: err.message, _source: 'live' });
     }

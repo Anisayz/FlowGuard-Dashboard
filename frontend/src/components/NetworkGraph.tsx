@@ -8,10 +8,14 @@ export function transformToGraphData(topology: TopologyData): GraphData {
   const links: GraphLink[] = [];
   const addedLinks = new Set<string>();
 
-  topology.switches.forEach((sw) => {
+ 
+  Object.entries(topology.switches).forEach(([dpid, sw]) => {
+    // Parse IP from "('127.0.0.1', 58638)" → "127.0.0.1"
+    const ip = sw.address?.match(/[\d.]+/)?.[0] ?? dpid.slice(-4);
     nodes.push({
-      id: sw.dpid, type: 'switch',
-      label: `SW-${sw.dpid.slice(-2)}`, dpid: sw.dpid,
+      id: dpid, type: 'switch',
+      label: ip, dpid,
+      address: sw.address,
     });
   });
 
@@ -19,7 +23,7 @@ export function transformToGraphData(topology: TopologyData): GraphData {
     const hostId = host.mac;
     nodes.push({
       id: hostId, type: 'host',
-      label: host.ipv4[0] || host.mac.slice(-8),
+      label: host.ipv4[0],
       mac: host.mac, ipv4: host.ipv4, port: host.port,
     });
     const linkId = `${hostId}-${host.dpid}`;
@@ -46,9 +50,9 @@ export function transformToGraphData(topology: TopologyData): GraphData {
 // ── NetworkGraph Component ─────────────────────────────────────────────────
 interface NetworkGraphProps {
   data: GraphData;
-  height?: number;       // hauteur personnalisable
-  showLabels?: boolean;  // afficher les labels
-  showLegend?: boolean;  // afficher la légende
+  height?: number;
+  showLabels?: boolean;
+  showLegend?: boolean;
 }
 
 const NetworkGraph: React.FC<NetworkGraphProps> = ({
@@ -86,7 +90,7 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
     const hstR = swR * 1.7;
 
     switches.forEach((sw, i) => {
-      const angle = (2 * Math.PI * i) / switches.length - Math.PI / 2;
+      const angle = (2 * Math.PI * i) / (switches.length || 1) - Math.PI / 2;
       positions[sw.id] = {
         x: cx + swR * Math.cos(angle),
         y: cy + swR * Math.sin(angle),
@@ -110,7 +114,7 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
           y: cy + hstR * Math.sin(angle + offset),
         };
       } else {
-        const angle = (2 * Math.PI * i) / hosts.length;
+        const angle = (2 * Math.PI * i) / (hosts.length || 1);
         positions[host.id] = {
           x: cx + hstR * Math.cos(angle),
           y: cy + hstR * Math.sin(angle),
@@ -182,12 +186,7 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
                   {node.label}
                 </text>
               )}
-              {showLabels && node.type === 'host' && node.ipv4?.[0] && (
-                <text y={r + 28} textAnchor="middle"
-                  fill="rgba(136,136,170,0.8)" fontSize={9} fontFamily="monospace">
-                  {node.ipv4[0]}
-                </text>
-              )}
+
             </g>
           );
         })}
@@ -202,10 +201,10 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
           flexWrap: 'wrap',
         }}>
           {[
-            { color: '#00ff88',              label: 'Commutateur',      shape: 'circle' },
-            { color: '#00aaff',              label: 'Hôte',        shape: 'circle' },
-            { color: 'rgba(0,255,136,0.4)',  label: 'Lien inter-switch', shape: 'line'   },
-            { color: 'rgba(0,170,255,0.4)',  label: 'Lien hôte',   shape: 'dashed' },
+            { color: '#00ff88',             label: 'Commutateur',       shape: 'circle' },
+            { color: '#00aaff',             label: 'Hôte',              shape: 'circle' },
+            { color: 'rgba(0,255,136,0.4)', label: 'Lien inter-switch', shape: 'line'   },
+            { color: 'rgba(0,170,255,0.4)', label: 'Lien hôte',         shape: 'dashed' },
           ].map(({ color, label, shape }) => (
             <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               {shape === 'circle' && <div style={{ width: 12, height: 12, borderRadius: '50%', background: color }} />}

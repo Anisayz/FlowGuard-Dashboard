@@ -1,7 +1,18 @@
 import React from 'react';
 import { deleteRule } from '../services/api';
 
-interface Rule { rule_id: string; src_ip: string; action: string; dpid: string; source: string; rate_kbps?: number | null; created_at: string; }
+interface Rule {
+  rule_id:    string;
+  src_ip:     string;
+  action:     string;
+  dpid:       string;
+  source:     string;
+  rate_kbps?: number | null;
+  created_at: string;
+  active:     boolean;       
+  deleted_at?: string | null;  
+}
+
 interface RulesTableProps { rules: Rule[]; onDelete: () => void; }
 
 const actionColor = (a: string) =>

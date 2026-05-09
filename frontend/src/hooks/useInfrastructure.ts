@@ -18,7 +18,7 @@ import {
   type MlStatus,
 } from '../services/infrastructureService';
 
-const POLL_INTERVAL_MS = 8_000;
+const POLL_INTERVAL_MS = 20_000;
 
 // ─── Shape returned to the component ─────────────────────────────────────────
 
@@ -39,9 +39,7 @@ export interface UseInfrastructureReturn {
   // actions
   refresh:    () => void;
 }
-
-// ─── Hook ─────────────────────────────────────────────────────────────────────
-
+ 
 export function useInfrastructure(): UseInfrastructureReturn {
   const [data, setData] = useState<InfrastructureData>({
     health:     {},

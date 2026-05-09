@@ -5,11 +5,10 @@ const { mlClient, MlEngineError }                  = require('../clients/mlClien
 const config = require('../config');
 
 const router = Router();
-
-// ─── GET /topology ────────────────────────────────────────────────────────────
-// Ryu: GET /topology → { switches: [{dpid, address}], links: [{src_dpid, src_port, dst_dpid, dst_port}] }
+ 
 router.get('/topology', async (req, res, next) => {
   try {
+      console.log('[topology] hitting route, calling Ryu at:', config.sdn.baseURL);
     const data = await sdnClient.get('/topology');
     console.debug('[topology] Raw response from Ryu:', JSON.stringify(data, null, 2));
     return res.json({ ...data, _source: 'live' });
@@ -26,9 +25,7 @@ router.get('/topology', async (req, res, next) => {
     next(err);
   }
 });
-
-// ─── GET /switches ────────────────────────────────────────────────────────────
-// Ryu: GET /switches → { switches: [{dpid, address, active_rules}] }
+ 
 router.get('/switches', async (req, res, next) => {
   try {
     const data = await sdnClient.get('/switches');
@@ -48,8 +45,7 @@ router.get('/switches', async (req, res, next) => {
   }
 });
 
-// ─── GET /mactable ────────────────────────────────────────────────────────────
-// Ryu: GET /mactable → { count, entries: [{dpid, mac, port}] }
+ 
 router.get('/mactable', async (req, res, next) => {
   try {
     const data = await sdnClient.get('/mactable');

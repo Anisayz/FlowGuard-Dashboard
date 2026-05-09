@@ -26,6 +26,7 @@ module.exports = {
   sdn: {
     baseURL:   process.env.SDN_CONTROLLER_URL      || 'http://127.0.0.1:8080',
     timeoutMs: Number(process.env.SDN_REQUEST_TIMEOUT_MS || 10000),
+    apiKey: process.env.SDN_API_KEY,
   },
 
   mitigation: {

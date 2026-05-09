@@ -26,23 +26,27 @@ export function useAppData(): AppData {
     setTopoLoading(true);
     setTopoError(undefined);
 
-    // Core data — non-blocking on failure
-    try {
-      const [rulesData, switchesData, macData, healthData] = await Promise.all([
-        getRules(),
-        getSwitches(),
-        getMacTable(),
-        getHealth(),
-      ]);
-      setRules(rulesData);
-      setSwitches(switchesData);
-      setMacTable(macData);
-      setHealth(healthData);
-    } catch (err) {
-      console.error('Core data fetch error:', err);
-    }
+    // Core data — each fetch is independent; one failure won't block the rest
+    const [rulesRes, switchesRes, macRes, healthRes] = await Promise.allSettled([
+      getRules(),
+      getSwitches(),
+      getMacTable(),
+      getHealth(),
+    ]);
 
-    // Topology — separate state so failures are scoped
+    if (rulesRes.status    === 'fulfilled') setRules(rulesRes.value);
+    else console.error('getRules failed:',    rulesRes.reason);
+
+    if (switchesRes.status === 'fulfilled') setSwitches(switchesRes.value);
+    else console.error('getSwitches failed:', switchesRes.reason);
+
+    if (macRes.status      === 'fulfilled') setMacTable(macRes.value);
+    else console.error('getMacTable failed:', macRes.reason);
+
+    if (healthRes.status   === 'fulfilled') setHealth(healthRes.value);
+    else console.error('getHealth failed:',   healthRes.reason);
+
+    // Topology — separate so its failure is scoped to topoError
     try {
       const topoData = await getTopology();
       setTopology(topoData);
@@ -56,7 +60,7 @@ export function useAppData(): AppData {
 
   useEffect(() => {
     fetchAll();
-    const interval = setInterval(fetchAll, 10_000);
+    const interval = setInterval(fetchAll, 20_000);
     return () => clearInterval(interval);
   }, [fetchAll]);
 

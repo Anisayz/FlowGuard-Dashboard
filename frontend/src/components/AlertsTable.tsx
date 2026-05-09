@@ -185,7 +185,8 @@ const AlertsTable: React.FC = () => {
                       </span>
                     </td>
                     <td style={{ padding: '11px 10px', color: '#00aaff' }}>{alert.dpid}</td>
-                    <td style={{ padding: '11px 10px', color: '#8888aa' }}>{alert.packet_count.toLocaleString()}</td>
+                   <td style={{ padding: '11px 10px', color: '#8888aa' }}>{alert.packet_count?.toLocaleString() ?? '—'}</td>
+
                     <td style={{ padding: '11px 10px', color: '#555577', fontSize: '11px' }}>{new Date(alert.created_at).toLocaleString()}</td>
                     <td style={{ padding: '11px 10px' }}>
                       <button onClick={() => setSelected(alert)} style={{
@@ -227,8 +228,8 @@ const AlertsTable: React.FC = () => {
                   { label: 'Gravité',     value: badge(uiSeverity(selected.severity).toUpperCase(), severityConfig[selected.severity]?.color || '#8888aa') },
                   { label: 'Statut',       value: badge(uiAlertStatus(selected.status), statusConfig[selected.status]?.color || '#8888aa') },
                   { label: 'Commutateur',       value: selected.dpid,                                           color: '#00aaff' },
-                  { label: 'Paquets',      value: selected.packet_count.toLocaleString(),                  color: '#e0e0ff' },
-                  { label: 'Octets',        value: selected.byte_count.toLocaleString(),                    color: '#e0e0ff' },
+                  { label: 'Paquets', value: selected.packet_count?.toLocaleString() ?? '—', color: '#e0e0ff' },
+                  { label: 'Octets',  value: selected.byte_count?.toLocaleString()   ?? '—', color: '#e0e0ff' },
                   { label: 'Détectée le',  value: new Date(selected.created_at).toLocaleString(),          color: '#8888aa' },
                   { label: 'Atténuée le', value: selected.mitigated_at ? new Date(selected.mitigated_at).toLocaleString() : '—', color: '#8888aa' },
                   { label: 'ID règle',      value: selected.rule_id || '—',                                color: '#8888aa' },

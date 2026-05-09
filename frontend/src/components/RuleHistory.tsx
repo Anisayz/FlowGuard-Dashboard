@@ -1,15 +1,29 @@
 import React from 'react';
-interface Rule { rule_id: string; src_ip: string; action: string; dpid: string; source: string; created_at: string; deleted_at?: string | null; alert_id?: string | null; }
+ 
+interface Rule {
+  rule_id:     string;
+  src_ip:      string;
+  action:      string;
+  dpid:        string;
+  source:      string;
+  created_at:  string;
+  deleted_at?: string | null;
+  alert_id?:   string | null;
+  active:      boolean;  
+}
+
+
 interface RuleHistoryProps { rules: Rule[]; }
 
 const RuleHistory: React.FC<RuleHistoryProps> = ({ rules }) => {
   if (rules.length === 0)
     return <p style={{ color: '#8888aa', textAlign: 'center', padding: '40px', fontFamily: 'monospace' }}>Aucun historique.</p>;
 
+  console.log(rules)
   return (
     <div style={{ background: 'linear-gradient(135deg, #1e1e2a, #14141e)', border: '1px solid #2a2a3a', borderRadius: '12px', overflow: 'hidden' }}>
       <h3 style={{ color: '#00ff88', padding: '16px 20px', margin: 0, borderBottom: '1px solid #2a2a3a', fontFamily: 'monospace' }}>
-        📜 Historique des règles
+         Historique des règles
       </h3>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', fontFamily: 'monospace' }}>
         <thead>

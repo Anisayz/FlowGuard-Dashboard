@@ -16,7 +16,7 @@ interface DashboardHomeProps {
 }
 
 const DashboardHome: React.FC<DashboardHomeProps> = ({ topology, isLoading, error }) => {
-  const { stats, timeline, attackTypes, recentAlerts } = useDashboardStats();
+  const { stats, timeline, attackTypes, recentAlerts} = useDashboardStats();
 
   const cardStyle: React.CSSProperties = {
     background: 'linear-gradient(135deg, #1e1e2a, #14141e)',
@@ -36,9 +36,20 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ topology, isLoading, erro
     background: 'rgba(0,255,136,0.1)', border: '1px solid rgba(0,255,136,0.3)',
     color: '#00ff88', borderRadius: '6px', padding: '3px 10px', fontSize: '12px',
   };
-
-  const graphData = topology ? transformToGraphData(topology) : null;
-
+   const switchCount = topology ? Object.keys(topology.switches).length : 0;
+  const graphData   = topology ? transformToGraphData(topology) : null;
+const PIE_COLORS = [
+  '#ff0066', // red-pink   
+  '#ffaa00', // amber       
+  '#aa00ff', // violet     
+  '#00aaff', // sky blue   
+  '#00ff88', // mint green
+  '#ff6600', // orange
+  '#ff00cc', // magenta
+  '#00ffff', // cyan
+  '#ffff00', // yellow
+  '#6666ff', // indigo
+];
   return (
     <div style={{ background: '#0a0a12', minHeight: '100vh', color: '#e0e0ff', padding: '20px', fontFamily: 'monospace' }}>
 
@@ -55,10 +66,10 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ topology, isLoading, erro
       {/* Stats Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
         {[
-          { label: 'Règles totales',     value: stats.totalRules,     color: '#00ff88', icon: '📋' },
-          { label: 'Règles actives',    value: stats.activeRules,    color: '#ffaa00', icon: '🔴' },
-          { label: 'Attaques bloquées', value: stats.blockedAttacks, color: '#ff0066', icon: '🛡️' },
-          { label: 'Commutateurs actifs', value: stats.activeSwitches, color: '#00aaff', icon: '🔌' },
+          { label: 'Règles totales',      value: stats.totalRules,     color: '#00ff88'},
+          { label: 'Règles actives',      value: stats.activeRules,    color: '#ffaa00' },
+          { label: 'Attaques bloquées',   value: stats.blockedAttacks, color: '#ff0066' },
+          { label: 'Commutateurs actifs', value: stats.activeSwitches, color: '#00aaff'  },
         ].map((card) => (
           <div key={card.label} style={{ ...cardStyle, textAlign: 'center' }}>
             <div style={{ fontSize: '28px' }}>{card.icon}</div>
@@ -73,56 +84,83 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ topology, isLoading, erro
       {/* Charts */}
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px', marginBottom: '20px' }}>
         <div style={cardStyle}>
-          <h3 style={{ color: '#00ff88', margin: '0 0 16px', fontSize: '14px' }}>📈 Chronologie des alertes</h3>
+          <h3 style={{ color: '#00ff88', margin: '0 0 16px', fontSize: '14px' }}>Chronologie des alertes</h3>
           {timeline.length === 0 ? (
             <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8888aa', fontSize: '12px' }}>
               Chargement…
             </div>
           ) : (
-            <ResponsiveContainer width="100%" height={220}>
-              <AreaChart data={timeline}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#2a2a3a" />
-                <XAxis dataKey="time" stroke="#8888aa" tick={{ fontSize: 11 }} />
-                <YAxis stroke="#8888aa" tick={{ fontSize: 11 }} />
-                <Tooltip {...tooltipStyle} />
-                <Legend wrapperStyle={{ fontSize: '12px' }} />
-                <Area type="monotone" dataKey="alerts"  stroke="#ff0066" fill="#ff006633" name="Alertes" />
-                <Area type="monotone" dataKey="blocked" stroke="#00ff88" fill="#00ff8833" name="Bloquées" />
-              </AreaChart>
-            </ResponsiveContainer>
-          )}
+  <ResponsiveContainer width="100%" height={220}>
+    <AreaChart
+      data={timeline.labels?.map((label, i) => ({
+        time:    label,
+        ATTACK:  timeline.datasets?.find(d => d.label === 'ATTACK')?.data[i]  ?? 0,
+        SUSPECT: timeline.datasets?.find(d => d.label === 'SUSPECT')?.data[i] ?? 0,
+        ANOMALY: timeline.datasets?.find(d => d.label === 'ANOMALY')?.data[i] ?? 0,
+        BENIGN:  timeline.datasets?.find(d => d.label === 'BENIGN')?.data[i]  ?? 0,
+      })) ?? []}
+    >
+      <CartesianGrid strokeDasharray="3 3" stroke="#2a2a3a" />
+      <XAxis dataKey="time"  stroke="#8888aa" tick={{ fontSize: 11 }} />
+      <YAxis stroke="#8888aa" tick={{ fontSize: 11 }} />
+      <Tooltip {...tooltipStyle} />
+      <Legend wrapperStyle={{ fontSize: '12px' }} />
+      <Area type="monotone" dataKey="ATTACK"  stroke="#ff0066" fill="#ff006633" name="Attack"  />
+      <Area type="monotone" dataKey="SUSPECT" stroke="#ffaa00" fill="#ffaa0033" name="Suspect" />
+      <Area type="monotone" dataKey="ANOMALY" stroke="#aa00ff" fill="#aa00ff33" name="Anomaly" />
+      <Area type="monotone" dataKey="BENIGN"  stroke="#00aaff" fill="#00aaff33" name="Benign"  />
+    </AreaChart>
+  </ResponsiveContainer>
+)}
         </div>
 
         <div style={cardStyle}>
-          <h3 style={{ color: '#00ff88', margin: '0 0 16px', fontSize: '14px' }}>🎯 Types d’attaque</h3>
+          <h3 style={{ color: '#00ff88', margin: '0 0 16px', fontSize: '14px' }}>Types d'attaque</h3>
           {attackTypes.length === 0 ? (
             <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8888aa', fontSize: '12px' }}>
               Chargement…
             </div>
-          ) : (
-            <ResponsiveContainer width="100%" height={220}>
-              <PieChart>
-                <Pie data={attackTypes} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={75}>
-                  {attackTypes.map((entry, i) => <Cell key={i} fill={entry.color} />)}
-                </Pie>
-                <Tooltip {...tooltipStyle} />
-                <Legend wrapperStyle={{ fontSize: '11px' }} />
-              </PieChart>
-            </ResponsiveContainer>
-          )}
+         ) : (
+  <ResponsiveContainer width="100%" height={220}>
+    <PieChart>
+      <Pie
+        data={attackTypes}
+        dataKey="value"
+        nameKey="name"
+        cx="50%"
+        cy="50%"
+        outerRadius={75}
+        paddingAngle={3}
+      >
+        {attackTypes.map((entry, i) => (
+          <Cell
+            key={i}
+            fill={entry.color || PIE_COLORS[i % PIE_COLORS.length]}
+            stroke="#0d0d1a"
+            strokeWidth={2}
+          />
+        ))}
+      </Pie>
+      <Tooltip {...tooltipStyle} />
+      <Legend wrapperStyle={{ fontSize: '11px' }} />
+    </PieChart>
+  </ResponsiveContainer>
+)}
         </div>
       </div>
 
       {/* Recent Alerts */}
       <div style={{ ...cardStyle, marginBottom: '20px' }}>
-        <h3 style={{ color: '#00ff88', margin: '0 0 16px', fontSize: '14px' }}>🚨 Alertes récentes</h3>
+        <h3 style={{ color: '#00ff88', margin: '0 0 16px', fontSize: '14px' }}>Alertes récentes</h3>
         {recentAlerts.length === 0 ? (
-          <p style={{ color: '#8888aa', fontSize: '13px', textAlign: 'center', padding: '24px 0' }}>Aucune alerte pour le moment.</p>
+          <p style={{ color: '#8888aa', fontSize: '13px', textAlign: 'center', padding: '24px 0' }}>
+            Aucune alerte pour le moment.
+          </p>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid #2a2a35' }}>
-                {['Heure', 'IP source', 'Destination', 'Type d’attaque', 'Gravité', 'Statut'].map(h => (
+                {['Heure', 'IP source', 'Destination', "Type d'attaque", 'Gravité', 'Statut'].map(h => (
                   <th key={h} style={{ padding: '8px', textAlign: 'left', color: '#8888aa', fontSize: '11px', letterSpacing: '1px' }}>
                     {h.toUpperCase()}
                   </th>
@@ -131,7 +169,9 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ topology, isLoading, erro
             </thead>
             <tbody>
               {recentAlerts.map((row, i) => (
-                <tr key={i} style={{ borderBottom: '1px solid #1a1a2a' }}
+                <tr
+                  key={i}
+                  style={{ borderBottom: '1px solid #1a1a2a' }}
                   onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(0,255,136,0.03)')}
                   onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                 >
@@ -173,12 +213,15 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ topology, isLoading, erro
           </div>
           {topology && (
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <span style={badgeStyle}>🔀 {topology.switches.length} commutateurs</span>
+              {/* ✅ switches is a dict — use Object.keys().length */}
+              <span style={badgeStyle}>
+                {switchCount} commutateur{switchCount !== 1 ? 's' : ''}
+              </span>
               <span style={{ ...badgeStyle, background: 'rgba(0,170,255,0.1)', border: '1px solid rgba(0,170,255,0.3)', color: '#00aaff' }}>
-                💻 {topology.hosts.length} hôtes
+                  {topology.hosts.length} hôte{topology.hosts.length !== 1 ? 's' : ''}
               </span>
               <span style={{ ...badgeStyle, background: 'rgba(255,170,0,0.1)', border: '1px solid rgba(255,170,0,0.3)', color: '#ffaa00' }}>
-                🔗 {Math.floor(topology.links.length / 2)} liaisons
+                 {Math.floor(topology.links.length / 2)} liaison{Math.floor(topology.links.length / 2) !== 1 ? 's' : ''}
               </span>
             </div>
           )}

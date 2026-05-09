@@ -41,15 +41,14 @@ function createSdnHttpClient() {
   return axios.create({
     baseURL: config.sdn.baseURL.replace(/\/$/, ''),
     timeout: config.sdn.timeoutMs,
-    headers: { Accept: 'application/json' },
+    headers: {
+      Accept: 'application/json',
+      ...(config.sdn.apiKey ? { 'X-API-Key': config.sdn.apiKey } : {}),
+    },
     validateStatus: (s) => s >= 200 && s < 300,
   });
 }
-
-/**
- * Low-level HTTP client for the Ryu (or compatible) REST API.
- * Paths follow the usual /v1.0/topology/* layout from sdn-dashboard fake_sdn_info.
- */
+ 
 function createSdnClient() {
   const http = createSdnHttpClient();
 
@@ -64,12 +63,16 @@ function createSdnClient() {
 
   return {
     get,
+
+    // ── Topology ────────────────────────────────────────────────────────────
     fetchSwitches: () => get('/v1.0/topology/switches'),
-    fetchLinks: () => get('/v1.0/topology/links'),
-    fetchHosts: () => get('/v1.0/topology/hosts'),
-    /**
-     * Best-effort parallel fetch; failures surface as SdnControllerError.
-     */
+    fetchLinks:    () => get('/v1.0/topology/links'),
+    fetchHosts:    () => get('/v1.0/topology/hosts'),
+
+    
+    getHealth: () => get('/health'),
+
+ 
     async fetchTopologyBundle() {
       const [switches, links, hosts] = await Promise.all([
         get('/v1.0/topology/switches'),

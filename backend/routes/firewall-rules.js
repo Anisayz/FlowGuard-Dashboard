@@ -35,18 +35,11 @@ router.get('/rules', async (req, res, next) => {
       offset:  offset ? Number(offset) : 0,
     });
 
-    console.debug('[rules] Raw response from mitigation engine:', JSON.stringify(data, null, 2));
-
     const rules = (data.rules || []).map(mapRule);
     return res.json({ count: rules.length, rules, _source: 'live' });
 
   } catch (err) {
     if (err instanceof MitigationEngineError) {
-      console.error('[rules] Mitigation engine error:', {
-        status:  err.status,
-        code:    err.code,
-        message: err.message,
-      });
       const status = err.status || 502;
       return res.status(status).json({ detail: err.message, _source: 'live' });
     }
@@ -57,6 +50,10 @@ router.get('/rules', async (req, res, next) => {
 // ─── POST /rules ──────────────────────────────────────────────────────────────
 router.post('/rules', requireAuth, async (req, res, next) => {
   const { src_ip, action, dpid, rate_kbps, idle_timeout, hard_timeout } = req.body || {};
+
+  console.debug('[rules] POST body received:', JSON.stringify({
+    src_ip, action, dpid, rate_kbps, idle_timeout, hard_timeout,
+  }, null, 2));
 
   if (action === 'ratelimit' && !rate_kbps) {
     return res.status(422).json({ detail: 'rate_kbps is required for ratelimit' });
@@ -71,18 +68,20 @@ router.post('/rules', requireAuth, async (req, res, next) => {
     return res.status(422).json({ detail: 'hard_timeout must be a number' });
   }
 
+  const payload = {
+  src_ip,
+  action,
+  dpid:         dpid ? parseInt(dpid, 16) : undefined,  // "00009248d8b57941" → 159558711591233
+  rate_kbps:    rate_kbps    ? Number(rate_kbps)    : undefined,
+  idle_timeout: idle_timeout ? Number(idle_timeout) : undefined,
+  hard_timeout: hard_timeout ? Number(hard_timeout) : undefined,
+};
+
+  console.debug('[rules] POST payload being sent to mitigation engine:', JSON.stringify(payload, null, 2));
+
   try {
-    const rule = await mitigationClient.createManualRule({
-      src_ip,
-      action,
-      dpid:         dpid         || undefined,
-      rate_kbps:    rate_kbps    ? Number(rate_kbps)    : undefined,
-      idle_timeout: idle_timeout ? Number(idle_timeout) : undefined,
-      hard_timeout: hard_timeout ? Number(hard_timeout) : undefined,
-    });
-
+    const rule = await mitigationClient.createManualRule(payload);
     console.debug('[rules] POST raw response from mitigation engine:', JSON.stringify(rule, null, 2));
-
     return res.status(201).json({ ...mapRule(rule), _source: 'live' });
 
   } catch (err) {
@@ -91,6 +90,8 @@ router.post('/rules', requireAuth, async (req, res, next) => {
         status:  err.status,
         code:    err.code,
         message: err.message,
+        // log the full response body from the engine if available
+        detail:  err.cause?.response?.data ?? null,
       });
       const status = err.status || 502;
       return res.status(status).json({ detail: err.message, _source: 'live' });
@@ -103,6 +104,8 @@ router.post('/rules', requireAuth, async (req, res, next) => {
 router.delete('/rules/:rule_id', requireAuth, async (req, res, next) => {
   const { rule_id } = req.params;
 
+  console.debug(`[rules] DELETE rule_id=${rule_id}`);
+
   try {
     const result = await mitigationClient.deleteRule(rule_id);
     console.debug(`[rules] DELETE raw response from mitigation engine:`, JSON.stringify(result, null, 2));
@@ -110,10 +113,13 @@ router.delete('/rules/:rule_id', requireAuth, async (req, res, next) => {
 
   } catch (err) {
     if (err instanceof MitigationEngineError) {
+      console.error('[rules] POST mitigation engine full detail:',
+          JSON.stringify(err.cause?.response?.data, null, 2));
       console.error(`[rules] DELETE mitigation engine error for rule ${rule_id}:`, {
         status:  err.status,
         code:    err.code,
         message: err.message,
+        detail:  err.cause?.response?.data ?? null,
       });
       const status = err.status || 502;
       return res.status(status).json({ detail: err.message, _source: 'live' });

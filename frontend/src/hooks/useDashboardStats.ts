@@ -8,7 +8,7 @@ export interface DashboardStats {
   activeSwitches: number;
 }
 
-export interface TimelinePoint { time: string; alerts: number; blocked: number; }
+export interface TimelinePoint { time: string; alerts: number; blocked: number; datasets: string[] }
 export interface AttackType    { name: string; value: number; color: string; }
 export interface RecentAlert   {
   time: string; src: string; dst: string;
@@ -22,7 +22,7 @@ interface UseDashboardStatsReturn {
   recentAlerts: RecentAlert[];
 }
 
-export function useDashboardStats(intervalMs = 10_000): UseDashboardStatsReturn {
+export function useDashboardStats(intervalMs = 20_000): UseDashboardStatsReturn {
   const [stats,        setStats]        = useState<DashboardStats>({
     totalRules: 0, activeRules: 0, blockedAttacks: 0, activeSwitches: 0,
   });

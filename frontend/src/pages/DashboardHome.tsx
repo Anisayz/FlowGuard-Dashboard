@@ -6,7 +6,7 @@ import {
 import { Network, AlertCircle } from 'lucide-react';
 import NetworkGraph, { transformToGraphData } from '../components/NetworkGraph';
 import { useDashboardStats } from '../hooks/useDashboardStats';
-import type { TopologyData } from '../types';
+import type { AttackType, TopologyData } from '../types';
 import { uiAlertStatus, uiSeverity } from '../i18n/formatters';
 
 interface DashboardHomeProps {
@@ -29,6 +29,10 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ topology, isLoading, erro
     borderRadius: '12px',
     padding: '20px',
   };
+const types_attack = attackTypes.map((attack: AttackType) => ({
+  ...attack,
+  name: attack.name === "Benign" ? "Anomaly" : attack.name,
+}));
 
   const tooltipStyle = {
     contentStyle: {
@@ -60,7 +64,7 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ topology, isLoading, erro
       {/* Header */}
       <div style={{ marginBottom: '24px' }}>
         <h1 style={{ color: '#00ff88', fontSize: '26px', margin: '0 0 4px' }}>
-          🛡️ Tableau de bord sécurité SDN
+           Tableau de bord sécurité SDN
         </h1>
         <p style={{ color: '#8888aa', margin: 0, fontSize: '13px' }}>
           Supervision réseau en temps réel • Détection des menaces • Mitigation automatisée
@@ -121,7 +125,7 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ topology, isLoading, erro
           ) : (
             <ResponsiveContainer width="100%" height={220}>
               <PieChart>
-                <Pie data={attackTypes} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={75} paddingAngle={3}>
+                <Pie data={types_attack} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={75} paddingAngle={3}>
                   {attackTypes.map((entry, i) => (
                     <Cell key={i} fill={entry.color || PIE_COLORS[i % PIE_COLORS.length]} stroke="#0d0d1a" strokeWidth={2} />
                   ))}
@@ -163,7 +167,7 @@ const DashboardHome: React.FC<DashboardHomeProps> = ({ topology, isLoading, erro
                   <td style={{ padding: '10px 8px', color: '#555577' }}>{row.time}</td>
                   <td style={{ padding: '10px 8px', color: '#ff0066', fontWeight: 'bold' }}>{row.src}</td>
                   <td style={{ padding: '10px 8px', color: '#8888aa' }}>{row.dst}</td>
-                  <td style={{ padding: '10px 8px', color: '#ffaa00' }}>{row.type}</td>
+                  <td style={{ padding: '10px 8px', color: '#ffaa00' }}>  {row.type=== 'Benign' ? 'ANOMALY' : row.type}</td>
                   <td style={{ padding: '10px 8px' }}>
                     <span style={{
                       background: row.sColor + '22', color: row.sColor,

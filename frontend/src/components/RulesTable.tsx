@@ -57,7 +57,7 @@ const RulesTable: React.FC<RulesTableProps> = ({ rules, onDelete }) => {
                 <button onClick={() => handleDelete(rule.rule_id)} style={{
                   background: '#ff006622', border: '1px solid #ff0066', borderRadius: '4px',
                   color: '#ff0066', padding: '4px 10px', cursor: 'pointer', fontSize: '11px',
-                }}>🗑 Supprimer</button>
+                }}>Supprimer</button>
               </td>
             </tr>
           ))}

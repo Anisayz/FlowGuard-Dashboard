@@ -10,7 +10,7 @@ export function transformToGraphData(topology: TopologyData): GraphData {
 
  
   Object.entries(topology.switches).forEach(([dpid, sw]) => {
-    // Parse IP from "('127.0.0.1', 58638)" → "127.0.0.1"
+     
     const ip = sw.address?.match(/[\d.]+/)?.[0] ?? dpid.slice(-4);
     nodes.push({
       id: dpid, type: 'switch',

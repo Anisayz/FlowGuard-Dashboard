@@ -173,7 +173,7 @@ const AlertsTable: React.FC = () => {
                     <td style={{ padding: '11px 10px', color: '#555577', fontSize: '11px' }}>{alert.alert_id.slice(0, 10)}…</td>
                     <td style={{ padding: '11px 10px', color: '#ff0066', fontWeight: 'bold' }}>{alert.src_ip}</td>
                     <td style={{ padding: '11px 10px', color: '#8888aa' }}>{alert.dst_ip}</td>
-                    <td style={{ padding: '11px 10px', color: '#ffaa00' }}>{alert.attack_type}</td>
+                      {alert.attack_type === 'Benign' ? 'ANOMALY' : alert.attack_type}
                     <td style={{ padding: '11px 10px' }}>
                       <span style={{ background: sev.color + '22', border: `1px solid ${sev.color}66`, color: sev.color, borderRadius: '4px', padding: '3px 8px', fontSize: '11px' }}>
                         {sev.icon} {uiSeverity(alert.severity).toUpperCase()}

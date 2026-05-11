@@ -37,7 +37,7 @@ const AddRuleForm: React.FC<AddRuleFormProps> = ({ availableDpids, onRuleAdded }
       border: '1px solid #2a2a3a', borderRadius: '12px',
       padding: '20px', marginBottom: '20px', fontFamily: 'monospace',
     }}>
-      <h3 style={{ color: '#00ff88', margin: '0 0 16px' }}>➕ Ajouter une règle</h3>
+      <h3 style={{ color: '#00ff88', margin: '0 0 16px' }}> Ajouter une règle</h3>
       <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           <label style={{ color: '#8888aa', fontSize: '11px' }}>IP source</label>
